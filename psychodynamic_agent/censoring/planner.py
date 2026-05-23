@@ -22,18 +22,16 @@ def plan_censor_a_transformations(id_output: IdOutput) -> CensorATransformPlan:
     raw_affect = id_output.raw_affect
     caution = _clamp(id_output.leakage_risk_self_check)
 
-    high_affects = [
-        name
+    high_affect_values = [
+        _clamp(value)
         for name, value in raw_affect.model_dump().items()
         if _high(value) and name not in {"valence", "approach", "avoidance"}
     ]
-    if len(high_affects) >= 2:
+    if len(high_affect_values) >= 2:
         directives.append(
             CensorATransformDirective(
                 mechanism="condensation",
-                intensity=_clamp(
-                    max(raw_affect.arousal, raw_affect.excitement, raw_affect.longing)
-                ),
+                intensity=_clamp(max(high_affect_values)),
                 target_dimension="affect",
                 instruction=(
                     "Blend multiple strong affects into a coherent and bounded "

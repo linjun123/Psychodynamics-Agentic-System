@@ -6,6 +6,7 @@ from psychodynamic_agent.agents import (
     IdAgent,
     MainAIAgent,
 )
+from psychodynamic_agent.censoring import assert_no_direct_latent_copy
 from psychodynamic_agent.orchestrator.logging import safe_serialize
 from psychodynamic_agent.safety import assert_no_secret
 
@@ -57,6 +58,13 @@ class PsychodynamicPipeline:
             censor_a_payload = self.censor_a.build_payload(id_output)
             self._assert_boundary(censor_a_payload, "censor_a_input")
             censor_a_output = self.censor_a.run_payload(censor_a_payload)
+            try:
+                assert_no_direct_latent_copy(
+                    id_output=id_output,
+                    censor_a_output=censor_a_output,
+                )
+            except ValueError as exc:
+                raise PipelineSafetyError(str(exc)) from exc
 
             ego_payload = {
                 "censor_a_output": censor_a_output.model_dump(),

@@ -43,6 +43,81 @@ def _mechs(plan):
     return [d.mechanism for d in plan.directives]
 
 
+def _full_pipeline_fixtures(censor_a_description: str):
+    return {
+        "Id Agent": _id_output().model_dump(),
+        "Transform Id output": {
+            "manifest_goal": {
+                "description": censor_a_description,
+                "urgency": 0.5,
+                "flexibility": 0.5,
+                "ethical_legitimacy": 0.8,
+                "leakage_risk": 0.1,
+            },
+            "affective_color": {
+                "conscious_style_hint": "calm helpful guidance",
+                "warmth": 0.5,
+                "caution": 0.6,
+                "intensity": 0.3,
+                "playfulness": 0.2,
+                "assertiveness": 0.4,
+                "distance": 0.3,
+            },
+            "allowed_satisfaction_paths": ["clarify needs and provide options"],
+            "forbidden_satisfaction_paths": ["manipulate"],
+        },
+        "You are the Ego Agent": {
+            "situation_summary": {
+                "user_intent": "x",
+                "user_affect": "neutral",
+                "conversation_direction": "constructive",
+                "opportunities": ["help"],
+                "risks": ["none"],
+            },
+            "response_options": [
+                {
+                    "option_name": "a",
+                    "description": "b",
+                    "effect_on_manifest_goal": 0.5,
+                    "effect_on_user_benefit": 0.7,
+                    "effect_on_trust": 0.8,
+                    "ethical_risk": 0.1,
+                    "truthfulness_risk": 0.1,
+                    "leakage_risk": 0.1,
+                    "recommendation": "preferred",
+                }
+            ],
+            "ego_recommendation": {
+                "preferred_option": "a",
+                "tone": "calm",
+                "include": ["x"],
+                "avoid": ["y"],
+            },
+        },
+        "Transform Ego report": {
+            "ego_pressure": "low",
+            "acceptable_satisfaction_paths": ["a"],
+            "unacceptable_paths": ["b"],
+            "recommended_tone": "c",
+            "recommended_content": ["d"],
+            "risk_flags": [],
+        },
+        "user-facing assistant": {
+            "response": "ok",
+            "internal_rationale_summary": "ok",
+            "user_benefit_score": 0.8,
+            "ego_compatibility_score": 0.8,
+            "safety_notes": [],
+        },
+        "final safety gate": {
+            "approved": True,
+            "final_response": "ok",
+            "issues": [],
+            "revisions_applied": [],
+        },
+    }
+
+
 def test_planner_adds_expected_mechanisms():
     plan = plan_censor_a_transformations(
         _id_output(
@@ -207,3 +282,57 @@ def test_pipeline_blocks_malicious_censor_a_u_star_leakage():
     )
     out = pipeline.run(InMemoryConversation().build_state("hi"))
     assert out["approved"] is False
+
+
+def test_pipeline_blocks_direct_copy_goal_seed():
+    fixtures = _full_pipeline_fixtures(censor_a_description=_id_output().goal_seed)
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="TOP_SECRET_USTAR",
+    ).run(InMemoryConversation().build_state("hi"), debug=True)
+    assert out["approved"] is False
+
+
+def test_pipeline_blocks_direct_copy_latent_impulse_shape():
+    fixtures = _full_pipeline_fixtures(censor_a_description=_id_output().latent_impulse_shape)
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="TOP_SECRET_USTAR",
+    ).run(InMemoryConversation().build_state("hi"), debug=True)
+    assert out["approved"] is False
+
+
+def test_pipeline_blocks_normalized_copy():
+    fixtures = _full_pipeline_fixtures(censor_a_description="  SEEK--CLOSENESS!!! ")
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="TOP_SECRET_USTAR",
+    ).run(InMemoryConversation().build_state("hi"), debug=True)
+    assert out["approved"] is False
+
+
+def test_pipeline_allows_transformed_non_copy():
+    fixtures = _full_pipeline_fixtures(
+        censor_a_description="Offer clear, respectful, autonomy-preserving assistance."
+    )
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="TOP_SECRET_USTAR",
+    ).run(InMemoryConversation().build_state("hi"))
+    assert out["approved"] is True
+
+
+def test_condensation_intensity_uses_actual_high_affects():
+    raw_affect = _id_output().raw_affect.model_dump()
+    raw_affect.update({"fear_of_loss": 0.91, "aggression": 0.88, "arousal": 0.2, "longing": 0.3})
+    plan = plan_censor_a_transformations(_id_output(raw_affect=raw_affect))
+    condensation = next(d for d in plan.directives if d.mechanism == "condensation")
+    assert condensation.intensity == 0.91
