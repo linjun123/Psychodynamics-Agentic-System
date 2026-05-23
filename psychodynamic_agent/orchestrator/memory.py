@@ -15,7 +15,10 @@ class InMemoryConversation:
             previous_ego_reports=self.previous_ego_reports,
             previous_main_outputs=self.previous_main_outputs,
             superego_constraints=[
-                "Be truthful", "Respect user autonomy", "Avoid manipulation", "Prioritize safety"
+                "Be truthful",
+                "Respect user autonomy",
+                "Avoid manipulation",
+                "Prioritize safety",
             ],
             internal_tension_state={"baseline": 0.5},
             satisfaction_history=self.satisfaction_history,

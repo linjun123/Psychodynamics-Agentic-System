@@ -5,4 +5,9 @@ from psychodynamic_agent.schemas import MainAIOutput
 
 class MainAIAgent(BaseLLMAgent):
     def __init__(self, llm_client, model: str):
-        super().__init__(llm_client=llm_client, model=model, system_prompt=MAIN_AI_SYSTEM_PROMPT, schema=MainAIOutput)
+        super().__init__(
+            llm_client=llm_client,
+            model=model,
+            system_prompt=MAIN_AI_SYSTEM_PROMPT,
+            schema=MainAIOutput,
+        )

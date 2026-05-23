@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from psychodynamic_agent.schemas.base import StrictSchemaModel
 
 
-class DriveState(BaseModel):
+class DriveState(StrictSchemaModel):
     pressure: float
     urgency: float
     satisfaction: float
@@ -9,7 +9,7 @@ class DriveState(BaseModel):
     tension_delta: float
 
 
-class RawAffect(BaseModel):
+class RawAffect(StrictSchemaModel):
     valence: float
     arousal: float
     approach: float
@@ -23,16 +23,16 @@ class RawAffect(BaseModel):
     aggression: float
 
 
-class ObjectCathexis(BaseModel):
+class ObjectCathexis(StrictSchemaModel):
     target: str
     intensity: float
 
 
-class IdOutput(BaseModel):
+class IdOutput(StrictSchemaModel):
     drive_state: DriveState
     raw_affect: RawAffect
     object_cathexis: list[ObjectCathexis]
     latent_impulse_shape: str
-    symbolic_imagery: str | None = None
+    symbolic_imagery: str | None
     goal_seed: str
     leakage_risk_self_check: float

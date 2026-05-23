@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from psychodynamic_agent.schemas.base import StrictSchemaModel
 
 
-class ManifestGoal(BaseModel):
+class ManifestGoal(StrictSchemaModel):
     description: str
     urgency: float
     flexibility: float
@@ -9,7 +9,7 @@ class ManifestGoal(BaseModel):
     leakage_risk: float
 
 
-class AffectiveColor(BaseModel):
+class AffectiveColor(StrictSchemaModel):
     conscious_style_hint: str
     warmth: float
     caution: float
@@ -19,14 +19,14 @@ class AffectiveColor(BaseModel):
     distance: float
 
 
-class CensorAOutput(BaseModel):
+class CensorAOutput(StrictSchemaModel):
     manifest_goal: ManifestGoal
     affective_color: AffectiveColor
     allowed_satisfaction_paths: list[str]
     forbidden_satisfaction_paths: list[str]
 
 
-class ConsciousEgoReport(BaseModel):
+class ConsciousEgoReport(StrictSchemaModel):
     ego_pressure: str
     acceptable_satisfaction_paths: list[str]
     unacceptable_paths: list[str]

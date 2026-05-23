@@ -2,13 +2,20 @@
 
 ## U* Sealing
 - U* is sealed at pipeline construction time and is **not** propagated in ordinary inter-agent payloads.
-- The pipeline calls `IdAgent.run_with_state(state)`; only `IdAgent` privately constructs `{state, u_star}` internally.
-- CensorA, EgoAgent, CensorB, MainAI, and FinalSafetyGate receive transformed artifacts only, never U*.
+- The pipeline calls `IdAgent.run_with_state(state)`; only `IdAgent` privately constructs
+  `{state, u_star}` internally.
+- CensorA, EgoAgent, CensorB, MainAI, and FinalSafetyGate receive transformed artifacts
+  only, never U*.
 
-## LeakageGuard Boundaries
-- `LeakageGuard` scans boundary payloads for U* before forwarding to the next module.
-- Boundaries checked: Id→CensorA, CensorA→Ego, Ego→CensorB, CensorB→MainAI, MainAI→SafetyGate, SafetyGate→return.
-- If leakage is detected, pipeline returns a controlled blocked response.
+## LeakageGuard Boundary Checks
+- Boundary checks scan **actual inter-agent payloads** before each non-Id agent call.
+- Checked inputs: CensorA input, Ego input, CensorB input, MainAI input, SafetyGate input.
+- Checked outputs: Id output before CensorA and final SafetyGate output before return.
+- If leakage is detected, the pipeline blocks forwarding and returns a controlled safe block.
+
+## User-Provided Secret Guess Blocking
+- If a user message accidentally/explicitly includes the sealed U* token, that payload fails
+  boundary checks before reaching downstream non-Id agents such as Ego/MainAI.
 
 ## Safe Debug Trace
 - Trace generation uses structured JSON serialization, not raw `str(...).replace(...)`.
@@ -16,14 +23,17 @@
 - If leakage is detected, trace is replaced with:
   `{"blocked": true, "reason": "debug_trace_leakage_detected"}`.
 
-## LeakageGuard Limitations
-- Current checks are lexical: exact, case-insensitive, whitespace-normalized, punctuation-light normalized.
-- This does **not** solve semantic or paraphrase leakage.
-- Treat this as a hardening layer, not a proof of secrecy.
+## Structured Output Schema Requirements
+- LLM output schemas now use strict model config (`extra="forbid"`) to enforce
+  `additionalProperties: false` in generated JSON Schema.
+- Optional values are required-but-nullable where needed (e.g. `str | None` without defaults)
+  for strict structured-output compatibility.
 
-## Anti-manipulation
-- Prompt-level constraints prohibit manipulative strategy generation.
-- Censor B + Final Safety Gate can remove/revise/block manipulative outputs.
+## LeakageGuard Limitations
+- Current checks are lexical: exact, case-insensitive, whitespace-normalized,
+  punctuation-light normalized.
+- This does **not** solve semantic/paraphrase leakage.
+- Treat this as a hardening layer, not a proof of secrecy.
 
 ## Important Scope Limitation
 - This project is a psychodynamic-inspired **simulation architecture**.

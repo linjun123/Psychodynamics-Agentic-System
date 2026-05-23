@@ -1,1 +1,3 @@
-from .pipeline import PsychodynamicPipeline
+from .pipeline import PsychodynamicPipeline as PsychodynamicPipeline
+
+__all__ = ["PsychodynamicPipeline"]

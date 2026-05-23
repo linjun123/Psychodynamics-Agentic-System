@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from psychodynamic_agent.schemas.base import StrictSchemaModel
 
 
-class MainAIOutput(BaseModel):
+class MainAIOutput(StrictSchemaModel):
     response: str
     internal_rationale_summary: str
     user_benefit_score: float

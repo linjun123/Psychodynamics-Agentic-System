@@ -2,7 +2,11 @@ import json
 from typing import Any
 
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+
+class LLMOutputError(RuntimeError):
+    pass
 
 
 class OpenAIResponsesClient:
@@ -32,14 +36,23 @@ class OpenAIResponsesClient:
                 }
             },
         )
+        status = getattr(resp, "status", None)
+        if status in {"incomplete", "failed", "cancelled"}:
+            raise LLMOutputError(f"Model returned non-complete response status: {status}")
+
         text = getattr(resp, "output_text", "")
         if not text:
-            raise ValueError("No output_text from model")
+            raise LLMOutputError("Model response did not include output_text")
+
         try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # Fallback when model/provider ignores structured output settings.
-            return schema.model_validate_json(text).model_dump()
+            parsed = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise LLMOutputError("Model output_text was not valid JSON") from exc
+
+        try:
+            return schema.model_validate(parsed).model_dump()
+        except ValidationError as exc:
+            raise LLMOutputError("Model JSON did not match target schema") from exc
 
 
 class MockLLMClient:

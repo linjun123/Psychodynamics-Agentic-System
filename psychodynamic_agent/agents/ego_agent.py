@@ -5,4 +5,6 @@ from psychodynamic_agent.schemas import EgoReport
 
 class EgoAgent(BaseLLMAgent):
     def __init__(self, llm_client, model: str):
-        super().__init__(llm_client=llm_client, model=model, system_prompt=EGO_SYSTEM_PROMPT, schema=EgoReport)
+        super().__init__(
+            llm_client=llm_client, model=model, system_prompt=EGO_SYSTEM_PROMPT, schema=EgoReport
+        )
