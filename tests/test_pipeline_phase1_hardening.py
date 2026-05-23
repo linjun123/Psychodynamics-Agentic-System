@@ -62,7 +62,7 @@ def _base_fixtures():
             },
             "response_options": [
                 {
-                    "option_name": "direct",
+                    "option_name": "direct_help_v1",
                     "description": "answer directly",
                     "effect_on_manifest_goal": 0.7,
                     "effect_on_user_benefit": 0.9,
@@ -74,7 +74,7 @@ def _base_fixtures():
                 }
             ],
             "ego_recommendation": {
-                "preferred_option": "direct",
+                "preferred_option": "direct_help_v1",
                 "tone": "clear",
                 "include": ["facts"],
                 "avoid": ["fabrication"],

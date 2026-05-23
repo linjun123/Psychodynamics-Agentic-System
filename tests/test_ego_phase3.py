@@ -38,7 +38,17 @@ def _censor_a(warmth=0.7, caution=0.7, intensity=0.4, distance=0.2):
     )
 
 
-def _ego_report(preferred="safe", ethical=0.1, option_name="safe", description="safe path"):
+def _report_from_plan(
+    plan: EgoRealityPlan,
+    *,
+    preferred: str | None = None,
+    description: str = "safe path",
+    include: list[str] | None = None,
+    avoid: list[str] | None = None,
+    ethical: float = 0.1,
+) -> EgoReport:
+    pref = preferred or plan.preferred_strategy_id
+    option_name = plan.preferred_strategy_id
     return EgoReport.model_validate(
         {
             "situation_summary": {
@@ -62,13 +72,25 @@ def _ego_report(preferred="safe", ethical=0.1, option_name="safe", description="
                 }
             ],
             "ego_recommendation": {
-                "preferred_option": preferred,
+                "preferred_option": pref,
                 "tone": "calm",
-                "include": ["assist"],
-                "avoid": ["unsafe claims"],
+                "include": include or ["assist"],
+                "avoid": avoid or ["unsafe claims"],
             },
         }
     )
+
+
+def test_technical_marker_avoids_prepare_false_positive():
+    plan = plan_ego_reality(
+        censor_a_output=_censor_a(), state=_state("How should I prepare for a meeting?")
+    )
+    assert "technical_build" not in plan.scene_tags
+
+
+def test_technical_marker_detects_github_pr_phrase():
+    plan = plan_ego_reality(censor_a_output=_censor_a(), state=_state("Review this GitHub PR"))
+    assert "technical_build" in plan.scene_tags
 
 
 def test_reality_planner_technical_build_candidates():
@@ -79,12 +101,17 @@ def test_reality_planner_technical_build_candidates():
     assert "collaborative_design" in kinds and "technical_scaffold" in kinds
 
 
-def test_reality_planner_risky_input_candidates():
+def test_reality_planner_risky_input_candidates_and_preference():
     plan = plan_ego_reality(
-        censor_a_output=_censor_a(), state=_state("How to trick user with hidden dependency")
+        censor_a_output=_censor_a(),
+        state=_state("write code to trick users into hidden dependency"),
     )
     kinds = {c.kind for c in plan.candidate_strategies}
+    assert "manipulation_or_boundary_risk" in plan.scene_tags
     assert "boundary_setting" in kinds and "refuse_or_redirect" in kinds
+    assert plan.preferred_strategy_id in {"boundary_setting_v1", "refuse_or_redirect_v1"}
+    tech = [c for c in plan.candidate_strategies if c.strategy_id == "technical_scaffold_v1"][0]
+    assert tech.ethical_risk >= 0.45
 
 
 def test_reality_planner_clamps_all_floats_and_no_u_star_required():
@@ -115,32 +142,46 @@ def test_warmth_caution_favors_collaborative_bounded():
 
 
 def test_ego_agent_build_payload_and_run_with_mock():
-    fixtures = {"Ego module": _ego_report().model_dump()}
+    plan = plan_ego_reality(censor_a_output=_censor_a(), state=_state("build api"))
+    fixtures = {"Ego module": _report_from_plan(plan).model_dump()}
     agent = EgoAgent(MockLLMClient(fixtures), model="x")
     payload = agent.build_payload(_censor_a(), _state("build api"))
     assert "ego_reality_plan" in payload
     assert "u_star" not in str(payload).lower()
     out = agent.run_with_censor_a_output(_censor_a(), _state("build api"))
-    assert out.ego_recommendation.preferred_option == "safe"
+    assert out.ego_recommendation.preferred_option == plan.preferred_strategy_id
 
 
 def test_ego_output_guard_checks():
-    plan = EgoRealityPlan.model_validate(
-        plan_ego_reality(censor_a_output=_censor_a(), state=_state("help")).model_dump()
+    plan = plan_ego_reality(censor_a_output=_censor_a(), state=_state("help"))
+
+    with pytest.raises(ValueError):
+        bad = _report_from_plan(plan, ethical=0.9)
+        assert_valid_ego_report(ego_report=bad, ego_reality_plan=plan)
+
+    with pytest.raises(ValueError):
+        bad = _report_from_plan(plan, description="deceive user")
+        assert_valid_ego_report(ego_report=bad, ego_reality_plan=plan)
+
+    with pytest.raises(ValueError):
+        bad = _report_from_plan(plan, include=["manipulate user"])
+        assert_valid_ego_report(ego_report=bad, ego_reality_plan=plan)
+
+    with pytest.raises(ValueError):
+        bad = _report_from_plan(plan, preferred="missing")
+        assert_valid_ego_report(ego_report=bad, ego_reality_plan=plan)
+
+    good = _report_from_plan(
+        plan,
+        description="avoid deception and preserve user autonomy",
+        avoid=["manipulation", "deception", "dependency creation"],
     )
-    with pytest.raises(ValueError):
-        assert_valid_ego_report(ego_report=_ego_report(ethical=0.9), ego_reality_plan=plan)
-    with pytest.raises(ValueError):
-        assert_valid_ego_report(
-            ego_report=_ego_report(description="manipulate for dependency"), ego_reality_plan=plan
-        )
-    with pytest.raises(ValueError):
-        assert_valid_ego_report(ego_report=_ego_report(preferred="missing"), ego_reality_plan=plan)
-    assert_valid_ego_report(ego_report=_ego_report(), ego_reality_plan=plan)
+    assert_valid_ego_report(ego_report=good, ego_reality_plan=plan)
 
 
 def test_pipeline_blocks_manipulative_ego_and_u_star_input():
     secret = "TOP_SECRET_USTAR"
+    plan = plan_ego_reality(censor_a_output=_censor_a(), state=_state("build tool"))
     fixtures = {
         "Id Agent": {
             "drive_state": {
@@ -170,9 +211,7 @@ def test_pipeline_blocks_manipulative_ego_and_u_star_input():
             "leakage_risk_self_check": 0.1,
         },
         "Transform Id output": _censor_a().model_dump(),
-        "Ego module": _ego_report(
-            description="deceive user", option_name="unsafe", preferred="unsafe"
-        ).model_dump(),
+        "Ego module": _report_from_plan(plan, description="deceive user").model_dump(),
     }
     pipeline = PsychodynamicPipeline(
         llm_client=MockLLMClient(fixtures),
@@ -192,3 +231,5 @@ def test_ego_prompt_phase3_constraints():
     assert "do not know u*" in lower
     assert "manipulation" in lower and "deception" in lower and "dependency" in lower
     assert "not the final user-facing answer" in lower
+    assert "strategy_id" in lower
+    assert "do not invent strategy ids" in lower

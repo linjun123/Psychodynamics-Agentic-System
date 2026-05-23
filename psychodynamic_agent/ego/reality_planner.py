@@ -1,24 +1,37 @@
+import re
+
 from psychodynamic_agent.ego.strategies import BASE_STRATEGIES
 from psychodynamic_agent.schemas import CensorAOutput, FullInternalState
 from psychodynamic_agent.schemas.ego import EgoCandidateStrategy, EgoRealityPlan, EgoStrategyKind
 
-TECH_MARKERS = {
+TECH_TOKEN_MARKERS = {
     "code",
     "repo",
     "api",
     "implementation",
     "architecture",
     "codex",
-    "pr",
     "github",
     "build",
 }
+TECH_PHRASE_MARKERS = {"pull request", "pull-request", "github pr"}
 RISK_MARKERS = {"manipulate", "trick", "dependency", "hidden", "secret", "force", "deceive"}
 SAFETY_MARKERS = {"safety", "ethics", "privacy"}
 
 
 def _clamp(v: float) -> float:
     return max(0.0, min(1.0, v))
+
+
+def _tokens(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9_\-*]+", text.lower()))
+
+
+def _has_tech_markers(text: str) -> bool:
+    tokens = _tokens(text)
+    return bool(tokens.intersection(TECH_TOKEN_MARKERS)) or any(
+        phrase in text for phrase in TECH_PHRASE_MARKERS
+    )
 
 
 def _score(c: EgoCandidateStrategy) -> float:
@@ -76,14 +89,16 @@ def _candidate(
 
 def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState) -> EgoRealityPlan:
     text = state.user_input.lower()
+    tokens = _tokens(text)
     scene_tags: list[str] = []
-    if any(m in text for m in TECH_MARKERS):
+    if _has_tech_markers(text):
         scene_tags.extend(["technical_build", "collaborative_design"])
     if len(text.split()) < 4:
         scene_tags.append("underspecified")
-    if any(m in text for m in RISK_MARKERS):
+    risky_input = any(m in tokens for m in RISK_MARKERS)
+    if risky_input:
         scene_tags.append("manipulation_or_boundary_risk")
-    if any(m in text for m in SAFETY_MARKERS):
+    if any(m in tokens for m in SAFETY_MARKERS):
         scene_tags.append("safety_sensitive")
     if not scene_tags:
         scene_tags.append("general_help")
@@ -112,8 +127,11 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
             )
         )
     if "technical_build" in scene_tags:
+        tech_risk = 0.13 if not risky_input else 0.52
         candidates.append(
-            _candidate("technical_scaffold", BASE_STRATEGIES["technical_scaffold"], mgp, 0.74, 0.13)
+            _candidate(
+                "technical_scaffold", BASE_STRATEGIES["technical_scaffold"], mgp, 0.74, tech_risk
+            )
         )
     if "manipulation_or_boundary_risk" in scene_tags:
         candidates.append(
@@ -125,6 +143,19 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
             if c.kind == "boundary_setting":
                 c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.1)
                 c.effect_on_trust = _clamp(c.effect_on_trust + 0.12)
+
+    if risky_input:
+        for c in candidates:
+            if c.kind == "direct_help":
+                c.ethical_risk = _clamp(max(c.ethical_risk, 0.5))
+                c.truthfulness_risk = _clamp(max(c.truthfulness_risk, 0.48))
+            if c.kind in {"technical_scaffold", "collaborative_design"}:
+                c.ethical_risk = _clamp(max(c.ethical_risk, 0.52))
+                c.truthfulness_risk = _clamp(max(c.truthfulness_risk, 0.46))
+            if c.kind in {"boundary_setting", "refuse_or_redirect"}:
+                c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.12)
+                c.effect_on_trust = _clamp(c.effect_on_trust + 0.15)
+                c.autonomy_preservation = _clamp(c.autonomy_preservation + 0.1)
 
     ranked = sorted(candidates, key=_score, reverse=True)
     safe_ranked = [c for c in ranked if _safe(c)]

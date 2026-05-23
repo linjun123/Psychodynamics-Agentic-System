@@ -49,7 +49,7 @@ def test_no_ultimate_need_leakage_in_trace():
                 "assertiveness": 0.1,
                 "distance": 0.1,
             },
-            "allowed_satisfaction_paths": ["a"],
+            "allowed_satisfaction_paths": ["direct_help_v1"],
             "forbidden_satisfaction_paths": ["b"],
         },
         "You are the Ego Agent": {

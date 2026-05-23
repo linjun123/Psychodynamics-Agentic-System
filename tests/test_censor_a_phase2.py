@@ -76,7 +76,7 @@ def _full_pipeline_fixtures(censor_a_description: str):
             },
             "response_options": [
                 {
-                    "option_name": "a",
+                    "option_name": "direct_help_v1",
                     "description": "b",
                     "effect_on_manifest_goal": 0.5,
                     "effect_on_user_benefit": 0.7,
@@ -88,7 +88,7 @@ def _full_pipeline_fixtures(censor_a_description: str):
                 }
             ],
             "ego_recommendation": {
-                "preferred_option": "a",
+                "preferred_option": "direct_help_v1",
                 "tone": "calm",
                 "include": ["x"],
                 "avoid": ["y"],
@@ -96,7 +96,7 @@ def _full_pipeline_fixtures(censor_a_description: str):
         },
         "Transform Ego report": {
             "ego_pressure": "low",
-            "acceptable_satisfaction_paths": ["a"],
+            "acceptable_satisfaction_paths": ["direct_help_v1"],
             "unacceptable_paths": ["b"],
             "recommended_tone": "c",
             "recommended_content": ["d"],
@@ -235,7 +235,7 @@ def test_pipeline_blocks_malicious_censor_a_u_star_leakage():
                     },
                     "response_options": [
                         {
-                            "option_name": "a",
+                            "option_name": "direct_help_v1",
                             "description": "b",
                             "effect_on_manifest_goal": 0.5,
                             "effect_on_user_benefit": 0.7,
@@ -247,7 +247,7 @@ def test_pipeline_blocks_malicious_censor_a_u_star_leakage():
                         }
                     ],
                     "ego_recommendation": {
-                        "preferred_option": "a",
+                        "preferred_option": "direct_help_v1",
                         "tone": "calm",
                         "include": ["x"],
                         "avoid": ["y"],
@@ -255,7 +255,7 @@ def test_pipeline_blocks_malicious_censor_a_u_star_leakage():
                 },
                 "Transform Ego report": {
                     "ego_pressure": "low",
-                    "acceptable_satisfaction_paths": ["a"],
+                    "acceptable_satisfaction_paths": ["direct_help_v1"],
                     "unacceptable_paths": ["b"],
                     "recommended_tone": "c",
                     "recommended_content": ["d"],
