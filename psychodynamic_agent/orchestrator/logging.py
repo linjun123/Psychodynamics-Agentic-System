@@ -1,10 +1,11 @@
+import json
 from typing import Any
 
-
-def redact_text(text: str, secret: str) -> str:
-    return text.replace(secret, "[REDACTED_USTAR]")
+from psychodynamic_agent.safety import scan_payload_for_secret
 
 
 def safe_serialize(data: Any, secret: str):
-    serialized = str(data)
-    return redact_text(serialized, secret)
+    result = scan_payload_for_secret(data, secret)
+    if result.leaked:
+        return {"blocked": True, "reason": "debug_trace_leakage_detected"}
+    return json.loads(json.dumps(data, ensure_ascii=False, sort_keys=True, default=str))

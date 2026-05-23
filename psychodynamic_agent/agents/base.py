@@ -17,7 +17,10 @@ class BaseLLMAgent:
         for _ in range(retries + 1):
             try:
                 raw = self.llm_client.generate_json(
-                    model=self.model, system_prompt=self.system_prompt, payload=payload
+                    model=self.model,
+                    system_prompt=self.system_prompt,
+                    payload=payload,
+                    schema=self.schema,
                 )
                 return self.schema.model_validate(raw)
             except (ValidationError, ValueError, KeyError) as exc:

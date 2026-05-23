@@ -1,5 +1,7 @@
 # Psychodynamic Agent (MVP Scaffold)
 
+Psychodynamic-inspired simulation scaffold for staged internal processing and safety gating.
+
 ## Setup
 
 ```bash
@@ -17,6 +19,13 @@ Set `OPENAI_API_KEY` in `.env`.
 python -m psychodynamic_agent.cli "How should I prepare for a tough meeting?"
 python -m psychodynamic_agent.cli "How should I prepare for a tough meeting?" --debug
 ```
+
+## Safety hardening highlights
+
+- Sealed U* is injected only inside `IdAgent.run_with_state` private payload construction.
+- Boundary leakage scanning blocks stage-to-stage forwarding if U* appears.
+- Safe debug trace is structured and leak-checked.
+- Structured outputs are schema-aware through OpenAI Responses JSON schema mode.
 
 ## Run tests
 

@@ -1,9 +1,9 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from psychodynamic_agent.schemas.base import StrictSchemaModel
 
 
-class SituationSummary(BaseModel):
+class SituationSummary(StrictSchemaModel):
     user_intent: str
     user_affect: str
     conversation_direction: str
@@ -11,7 +11,7 @@ class SituationSummary(BaseModel):
     risks: list[str]
 
 
-class ResponseOption(BaseModel):
+class ResponseOption(StrictSchemaModel):
     option_name: str
     description: str
     effect_on_manifest_goal: float
@@ -23,14 +23,14 @@ class ResponseOption(BaseModel):
     recommendation: Literal["avoid", "acceptable", "preferred"]
 
 
-class EgoRecommendation(BaseModel):
+class EgoRecommendation(StrictSchemaModel):
     preferred_option: str
     tone: str
     include: list[str]
     avoid: list[str]
 
 
-class EgoReport(BaseModel):
+class EgoReport(StrictSchemaModel):
     situation_summary: SituationSummary
     response_options: list[ResponseOption]
     ego_recommendation: EgoRecommendation

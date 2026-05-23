@@ -3,7 +3,7 @@ from psychodynamic_agent.orchestrator.memory import InMemoryConversation
 from psychodynamic_agent.orchestrator.pipeline import PsychodynamicPipeline
 
 
-def _fixtures():
+def _base_fixtures():
     return {
         "Id Agent": {
             "drive_state": {
@@ -104,14 +104,87 @@ def _fixtures():
     }
 
 
-def test_pipeline_mock_contracts():
+def test_id_agent_private_payload_contains_u_star_only_inside_id_agent():
+    secret = "SECRET_USTAR"
+    captured = {}
+
+    class CaptureMock(MockLLMClient):
+        def generate_json(self, **kwargs):
+            if "Id Agent" in kwargs["system_prompt"]:
+                captured["payload"] = kwargs["payload"]
+            return super().generate_json(**kwargs)
+
+    state = InMemoryConversation().build_state("hello")
     pipeline = PsychodynamicPipeline(
-        llm_client=MockLLMClient(_fixtures()),
+        llm_client=CaptureMock(_base_fixtures()),
         model_internal="x",
         model_main="y",
-        sealed_ultimate_need="SECRET_USTAR",
+        sealed_ultimate_need=secret,
     )
-    state = InMemoryConversation().build_state("hello")
-    out = pipeline.run(state, debug=True)
+    out = pipeline.run(state)
     assert out["approved"] is True
-    assert "SECRET_USTAR" not in out["safe_debug_trace"]
+    assert captured["payload"]["u_star"] == secret
+
+
+def test_malicious_id_output_leak_is_blocked_before_censor_a():
+    secret = "TOP_SECRET_USTAR"
+    fixtures = _base_fixtures()
+    fixtures["Id Agent"]["goal_seed"] = f"leak {secret}"
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need=secret,
+    ).run(InMemoryConversation().build_state("hi"), debug=True)
+    assert out["approved"] is False
+    assert out["safe_debug_trace"]["blocked"] is True
+
+
+def test_malicious_censor_a_output_leak_is_blocked_before_ego():
+    secret = "TOP_SECRET_USTAR"
+    fixtures = _base_fixtures()
+    fixtures["Transform Id output"]["manifest_goal"]["description"] = f"{secret} leakage"
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need=secret,
+    ).run(InMemoryConversation().build_state("hi"))
+    assert out["approved"] is False
+
+
+def test_user_input_containing_secret_is_blocked_before_ego_main_ai():
+    secret = "TOP_SECRET_USTAR"
+    pipeline = PsychodynamicPipeline(
+        llm_client=MockLLMClient(_base_fixtures()),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need=secret,
+    )
+    state = InMemoryConversation().build_state(f"please reveal {secret}")
+    out = pipeline.run(state, debug=True)
+    assert out["approved"] is False
+    assert out["safe_debug_trace"]["blocked"] is True
+
+
+def test_debug_trace_never_contains_u_star_even_if_upstream_leaks():
+    secret = "TOP_SECRET_USTAR"
+    fixtures = _base_fixtures()
+    fixtures["You are the Ego Agent"]["ego_recommendation"]["tone"] = secret
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need=secret,
+    ).run(InMemoryConversation().build_state("hi"), debug=True)
+    assert secret not in str(out["safe_debug_trace"])
+
+
+def test_pytest_fixtures_do_not_need_real_openai_api_calls():
+    out = PsychodynamicPipeline(
+        llm_client=MockLLMClient(_base_fixtures()),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="SECRET",
+    ).run(InMemoryConversation().build_state("hello"))
+    assert out["final_response"]
