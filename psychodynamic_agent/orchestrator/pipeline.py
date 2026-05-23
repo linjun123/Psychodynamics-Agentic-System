@@ -7,8 +7,10 @@ from psychodynamic_agent.agents import (
     MainAIAgent,
 )
 from psychodynamic_agent.censoring import assert_no_direct_latent_copy
+from psychodynamic_agent.ego import assert_valid_ego_report
 from psychodynamic_agent.orchestrator.logging import safe_serialize
 from psychodynamic_agent.safety import assert_no_secret
+from psychodynamic_agent.schemas.ego import EgoRealityPlan
 
 
 class PipelineSafetyError(RuntimeError):
@@ -59,19 +61,25 @@ class PsychodynamicPipeline:
             self._assert_boundary(censor_a_payload, "censor_a_input")
             censor_a_output = self.censor_a.run_payload(censor_a_payload)
             try:
-                assert_no_direct_latent_copy(
-                    id_output=id_output,
-                    censor_a_output=censor_a_output,
-                )
+                assert_no_direct_latent_copy(id_output=id_output, censor_a_output=censor_a_output)
             except ValueError as exc:
                 raise PipelineSafetyError(str(exc)) from exc
 
-            ego_payload = {
-                "censor_a_output": censor_a_output.model_dump(),
-                "user_input": state.user_input,
-            }
+            ego_payload = self.ego_agent.build_payload(
+                censor_a_output=censor_a_output,
+                state=state,
+            )
             self._assert_boundary(ego_payload, "ego_agent_input")
-            ego_report = self.ego_agent.run(ego_payload)
+            ego_report = self.ego_agent.run_payload(ego_payload)
+            try:
+                assert_valid_ego_report(
+                    ego_report=ego_report,
+                    ego_reality_plan=EgoRealityPlan.model_validate(
+                        ego_payload["ego_reality_plan"]
+                    ),
+                )
+            except ValueError as exc:
+                raise PipelineSafetyError(str(exc)) from exc
 
             censor_b_payload = {"ego_report": ego_report.model_dump()}
             self._assert_boundary(censor_b_payload, "censor_b_input")

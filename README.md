@@ -32,3 +32,7 @@ python -m psychodynamic_agent.cli "How should I prepare for a tough meeting?" --
 ```bash
 pytest
 ```
+
+
+### Phase 3 Ego Planner
+The Ego stage now includes a deterministic reality-principle planner (`EgoRealityPlan`) that scores candidate strategies before Ego LLM realization. This plan is internal-only and must not include U*. Ego must prioritize user benefit, truthfulness, autonomy, and safety over manifest-goal pressure.

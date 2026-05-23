@@ -45,3 +45,10 @@
 - Censor A payload boundary scanning remains active in pipeline.
 - Censor A planner emits directives only (no user-facing output, no manipulation instructions).
 - LeakageGuard remains lexical-only in Phase 2.
+
+
+## Phase 3 Safety
+- Ego receives CensorAOutput + internal state and plans deterministic safe strategies.
+- Ego output is validated by an output guard before CensorB.
+- Manipulation/deception/coercion/dependency language is blocked.
+- Existing U* leakage boundaries remain intact.

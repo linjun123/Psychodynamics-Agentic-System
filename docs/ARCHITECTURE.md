@@ -32,3 +32,11 @@ Censor A now includes a deterministic `CensorATransformPlanner` stage before LLM
 Flow: `IdOutput -> transform_plan -> CensorAAgent LLM -> CensorAOutput`.
 The planner emits Freudian-inspired transformation directives (e.g., displacement, sublimation) as simulation heuristics, not psychoanalytic truth.
 Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is internal to Censor A.
+
+
+## Phase 3: Ego Reality-Principle Planner
+- Ego now uses a deterministic `EgoRealityPlan` before LLM realization.
+- `EgoRealityPlan` is internal and not user-facing.
+- Ego evaluates strategy consequences rather than producing final answers.
+- Ego must not know U*.
+- Manifest-goal satisfaction cannot override user benefit, truthfulness, autonomy, and safety.
