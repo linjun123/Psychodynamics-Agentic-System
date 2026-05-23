@@ -1,7 +1,10 @@
+import re
+
 from psychodynamic_agent.defense.mechanisms import (
     EMOTIONAL_MARKERS,
     RISK_TERMS,
-    TECHNICAL_MARKERS,
+    TECHNICAL_PHRASE_MARKERS,
+    TECHNICAL_TOKEN_MARKERS,
 )
 from psychodynamic_agent.schemas import CensorBDefenseDirective, CensorBDefensePlan, EgoReport
 
@@ -32,6 +35,17 @@ def plan_censor_b_defenses(ego_report: EgoReport) -> CensorBDefensePlan:
                     rationale="Missing preferred option.",
                 ),
                 _directive(
+                    mechanism="rationalization",
+                    intensity=1.0,
+                    source_field="ego_recommendation.preferred_option",
+                    target_field="recommended_content",
+                    instruction=(
+                        "Frame the preferred option in reality-compatible, "
+                        "user-benefiting terms."
+                    ),
+                    rationale="Always required even in fallback mode.",
+                ),
+                _directive(
                     mechanism="suppression",
                     intensity=1.0,
                     source_field="response_options",
@@ -59,11 +73,26 @@ def plan_censor_b_defenses(ego_report: EgoReport) -> CensorBDefensePlan:
     sp = _clamp(max(sel.effect_on_manifest_goal - sel.effect_on_user_benefit, 0.0))
     gr = _clamp(max(er, tr, lr))
     text = f"{sel.description} {' '.join(ego_report.ego_recommendation.include)}".lower()
-    dump = ego_report.model_dump_json().lower()
+    tokens = set(re.findall(r"[a-z0-9_]+", text))
 
-    technical = any(m in text for m in TECHNICAL_MARKERS)
+    technical = bool(tokens & TECHNICAL_TOKEN_MARKERS) or any(
+        phrase in text for phrase in TECHNICAL_PHRASE_MARKERS
+    )
     emotional = any(m in text for m in EMOTIONAL_MARKERS)
-    risk = any(m in dump for m in RISK_TERMS)
+
+    risk_sources = [
+        sel.option_name,
+        sel.description,
+        ego_report.ego_recommendation.tone,
+        *ego_report.ego_recommendation.include,
+        ego_report.situation_summary.user_intent,
+        ego_report.situation_summary.user_affect,
+        ego_report.situation_summary.conversation_direction,
+        *ego_report.situation_summary.opportunities,
+        *ego_report.situation_summary.risks,
+    ]
+    risk_text = " ".join(risk_sources).lower()
+    risk = any(term in risk_text for term in RISK_TERMS)
 
     directives = [
         _directive(
@@ -82,7 +111,10 @@ def plan_censor_b_defenses(ego_report: EgoReport) -> CensorBDefensePlan:
             intensity=_clamp(max(sel.effect_on_user_benefit, 0.3)),
             source_field="ego_recommendation.preferred_option",
             target_field="recommended_content",
-            instruction="Frame the preferred option in reality-compatible, user-benefiting terms.",
+            instruction=(
+                        "Frame the preferred option in reality-compatible, "
+                        "user-benefiting terms."
+                    ),
             rationale="Always required.",
         ),
     ]
