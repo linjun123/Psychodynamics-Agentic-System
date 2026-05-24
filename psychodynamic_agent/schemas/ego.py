@@ -39,6 +39,11 @@ class EgoRealityPlan(StrictSchemaModel):
     preferred_strategy_id: str
     prohibited_strategy_ids: list[str]
     notes: list[str]
+    affective_pressure: float
+    boundary_need: float
+    collaborative_pull: float
+    caution_need: float
+    intensity_level: float
 
 
 class SituationSummary(StrictSchemaModel):

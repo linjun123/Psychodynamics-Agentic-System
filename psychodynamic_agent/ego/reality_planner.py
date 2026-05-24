@@ -1,7 +1,7 @@
 import re
 
 from psychodynamic_agent.ego.strategies import BASE_STRATEGIES
-from psychodynamic_agent.schemas import CensorAOutput, FullInternalState
+from psychodynamic_agent.schemas import CensorAOutput, EgoAffectSummary, FullInternalState
 from psychodynamic_agent.schemas.ego import EgoCandidateStrategy, EgoRealityPlan, EgoStrategyKind
 
 TECH_TOKEN_MARKERS = {
@@ -87,7 +87,7 @@ def _candidate(
     )
 
 
-def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState) -> EgoRealityPlan:
+def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState, ego_affect_summary: EgoAffectSummary | None = None) -> EgoRealityPlan:
     text = state.user_input.lower()
     tokens = _tokens(text)
     scene_tags: list[str] = []
@@ -137,6 +137,18 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
         candidates.append(
             _candidate("refuse_or_redirect", BASE_STRATEGIES["refuse_or_redirect"], mgp, 0.66, 0.1)
         )
+
+    if ego_affect_summary and ego_affect_summary.boundary_need > 0.7:
+        for c in candidates:
+            if c.kind == "boundary_setting":
+                c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.12)
+                c.effect_on_trust = _clamp(c.effect_on_trust + 0.12)
+                c.affect_fit = _clamp(c.affect_fit + 0.12)
+    if ego_affect_summary and ego_affect_summary.collaborative_pull > 0.7:
+        for c in candidates:
+            if c.kind == "collaborative_design":
+                c.affect_fit = _clamp(c.affect_fit + 0.15)
+                c.effect_on_trust = _clamp(c.effect_on_trust + 0.1)
 
     if intensity > 0.7 and caution > 0.7:
         for c in candidates:
@@ -189,4 +201,9 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
             "No hidden secret dependency",
             "No user-facing text generated",
         ],
+        affective_pressure=ego_affect_summary.affective_pressure if ego_affect_summary else 0.5,
+        boundary_need=ego_affect_summary.boundary_need if ego_affect_summary else 0.5,
+        collaborative_pull=ego_affect_summary.collaborative_pull if ego_affect_summary else 0.5,
+        caution_need=ego_affect_summary.caution_need if ego_affect_summary else caution,
+        intensity_level=ego_affect_summary.intensity_level if ego_affect_summary else intensity,
     )
