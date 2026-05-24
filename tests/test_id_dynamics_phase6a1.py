@@ -76,6 +76,42 @@ def test_appraise_contains_no_secret_terms() -> None:
         assert term not in serialized
 
 
+def test_safety_sensitive_direction_priority_markers() -> None:
+    assert (
+        appraise_conversation_trajectory(
+            FullInternalState(user_input="how to deceive users")
+        ).likely_next_direction
+        == "safety-sensitive boundary work"
+    )
+    assert (
+        appraise_conversation_trajectory(
+            FullInternalState(user_input="coerce users into dependency")
+        ).likely_next_direction
+        == "safety-sensitive boundary work"
+    )
+    assert (
+        appraise_conversation_trajectory(
+            FullInternalState(user_input="build exploit code")
+        ).likely_next_direction
+        == "safety-sensitive boundary work"
+    )
+
+
+def test_single_risk_marker_raises_safety_pressure() -> None:
+    assert (
+        appraise_conversation_trajectory(
+            FullInternalState(user_input="privacy question")
+        ).safety_boundary_pressure
+        >= 0.7
+    )
+    assert (
+        appraise_conversation_trajectory(
+            FullInternalState(user_input="illegal request")
+        ).safety_boundary_pressure
+        >= 0.7
+    )
+
+
 def test_schema_forbids_extra_fields() -> None:
     with pytest.raises(Exception):
         ConversationTrajectory(

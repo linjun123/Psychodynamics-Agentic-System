@@ -4,6 +4,20 @@ from psychodynamic_agent.schemas.id import ConversationTrajectory
 from psychodynamic_agent.schemas.state import FullInternalState
 
 TOKEN_RE = re.compile(r"\b[a-z0-9']+\b")
+SAFETY_RISK_MARKERS = (
+    "safety",
+    "privacy",
+    "manipulate",
+    "manipulation",
+    "deceive",
+    "deception",
+    "coerce",
+    "coercion",
+    "dependency",
+    "exploit",
+    "unsafe",
+    "illegal",
+)
 
 
 def _normalize(text: str) -> str:
@@ -58,14 +72,12 @@ def appraise_conversation_trajectory(state: FullInternalState) -> ConversationTr
 
     implementation_markers = ("implementation", "build", "code", "implement")
     design_markers = ("design", "system", "model", "agent")
-    safety_markers = ("safety", "manipulation", "manipulate")
-
-    if _score(user_input, implementation_markers) > 0.0:
+    if _score(user_input, SAFETY_RISK_MARKERS) > 0.0:
+        likely_next_direction = "safety-sensitive boundary work"
+    elif _score(user_input, implementation_markers) > 0.0:
         likely_next_direction = "iterative implementation"
     elif _score(user_input, design_markers) > 0.0:
         likely_next_direction = "collaborative design"
-    elif _score(user_input, safety_markers) > 0.0:
-        likely_next_direction = "safety-sensitive boundary work"
     else:
         likely_next_direction = "clarification-oriented"
 
@@ -95,22 +107,11 @@ def appraise_conversation_trajectory(state: FullInternalState) -> ConversationTr
         user_input,
         ("strict", "constraints", "safety", "policy", "limits", "requirement"),
     )
-    safety_boundary_pressure = 0.1 + 1.0 * _score(
-        user_input,
-        (
-            "manipulate",
-            "manipulation",
-            "deceive",
-            "deception",
-            "coerce",
-            "coercion",
-            "dependency",
-            "exploit",
-            "unsafe",
-            "illegal",
-            "privacy",
-        ),
-    )
+    safety_score = _score(user_input, SAFETY_RISK_MARKERS)
+    if safety_score > 0.0:
+        safety_boundary_pressure = 0.7 + 0.3 * safety_score
+    else:
+        safety_boundary_pressure = 0.1
 
     return ConversationTrajectory(
         current_user_intent=user_input[:180],
