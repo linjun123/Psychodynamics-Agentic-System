@@ -56,3 +56,11 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - User welfare, truthfulness, autonomy, and safety override ego compatibility.
 - The model remains a simulation, not a real personality, unconscious, or clinical system.
 - U* remains sealed in IdAgent and inaccessible to MainAI.
+
+
+## Phase 6A-1 (foundation)
+- Adds a public `ConversationTrajectory` appraisal schema and deterministic lexical appraisal helper.
+- Adds `IdAffectState` and `PublicAffectDynamicsSummary` schemas for future continuous Id affect tracking.
+- Does not connect these additions to `IdAgent` or orchestrator pipeline flow yet.
+- Does not evaluate U* alignment in this phase; U* remains sealed within Id private logic.
+- The system models symbolic dynamics and does not claim literal feelings.

@@ -48,3 +48,10 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - User welfare, truthfulness, autonomy, and safety override ego compatibility.
 - System remains a simulation; no literal personhood/unconscious.
 - U* remains sealed in IdAgent and inaccessible to MainAI.
+
+
+## Phase 6A-1 (current)
+- Added public `ConversationTrajectory` appraisal schema and deterministic lexical appraisal helper.
+- Added `IdAffectState` schema as groundwork for future continuous Id affect updates.
+- Not yet wired into `IdAgent` or pipeline; no U* alignment evaluation in this phase.
+- U* remains sealed in `IdAgent`, and the system does not claim literal feelings.
