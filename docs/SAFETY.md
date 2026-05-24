@@ -65,3 +65,10 @@
 - MainAI output is checked by deterministic output guard before FinalSafetyGate.
 - Ego compatibility is an allowance only and cannot override welfare/truth/autonomy/safety.
 - MainAI must not reveal/speculate on U* or claim literal human feelings/unconscious/personhood.
+
+
+## Phase 6A-1 safety scope
+- Introduces only public trajectory appraisal and affect-state structure.
+- No U* evaluation is performed in this phase.
+- U* remains sealed in `IdAgent`; no new secret-bearing public outputs are introduced.
+- The model does not claim literal feelings; affect fields are control-state abstractions.
