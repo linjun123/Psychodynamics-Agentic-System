@@ -73,3 +73,10 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - `IdAgent` flow is unchanged and does not receive `IdAffectState` in this phase.
 - This phase does not perform private U* alignment; U* remains sealed and inaccessible.
 - Affect modeling remains a control-state simulation and does not claim literal feelings.
+
+## Phase 6A-3 (Id-private turn API, not wired into pipeline)
+- Adds `IdAgent.run_turn(...)` as a private-turn API alongside unchanged `run_with_state(...)`.
+- `run_turn` can privately evaluate trajectory alignment against sealed immutable U* via `LatentDriveAlignment`.
+- `run_turn` strips private alignment data and returns only public `IdTurnOutput`.
+- Pipeline runtime flow is intentionally unchanged and still calls `run_with_state`.
+- U* remains sealed, and the model does not claim literal feelings.

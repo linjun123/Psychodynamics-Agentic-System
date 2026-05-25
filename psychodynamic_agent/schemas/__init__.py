@@ -9,7 +9,15 @@ from .censor import (
     TransformMechanism,
 )
 from .ego import EgoRealityPlan, EgoReport
-from .id import ConversationTrajectory, IdAffectState, IdOutput, PublicAffectDynamicsSummary
+from .id import (
+    ConversationTrajectory,
+    IdAffectState,
+    IdOutput,
+    IdTurnOutput,
+    LatentDriveAlignment,
+    PrivateIdTurnOutput,
+    PublicAffectDynamicsSummary,
+)
 from .main_ai import MainAIConstraint, MainAIOutput, MainAIResponsePlan
 from .safety import SafetyGateOutput
 from .state import FullInternalState, Message
@@ -21,6 +29,9 @@ __all__ = [
     "ConversationTrajectory",
     "IdAffectState",
     "PublicAffectDynamicsSummary",
+    "LatentDriveAlignment",
+    "IdTurnOutput",
+    "PrivateIdTurnOutput",
     "CensorAOutput",
     "EgoReport",
     "EgoRealityPlan",

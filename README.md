@@ -62,3 +62,10 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - Added safe public `PublicAffectDynamicsSummary` in debug trace.
 - This is not private U* alignment yet; `IdAgent` does not receive `IdAffectState` in this phase.
 - U* remains sealed and the system does not claim literal feelings.
+
+## Phase 6A-3
+- Added an Id-private `run_turn` API for future private trajectory-alignment evaluation against sealed U*.
+- Added `LatentDriveAlignment` and private/public turn output schemas.
+- `run_turn` strips latent alignment and returns public-safe `IdTurnOutput` only.
+- Pipeline is intentionally unchanged and still uses `run_with_state` at runtime.
+- U* remains sealed and no literal feelings are claimed.

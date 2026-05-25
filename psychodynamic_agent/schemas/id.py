@@ -120,3 +120,43 @@ class PublicAffectDynamicsSummary(StrictSchemaModel):
     pressure_level: str
     caution_level: str
     public_notes: list[str]
+
+
+class LatentDriveAlignment(StrictSchemaModel):
+    current_alignment: float
+    alignment_delta: float
+    trajectory_momentum: float
+    symbolic_satisfaction_delta: float
+    frustration_delta: float
+    obstruction_level: float
+    leakage_pressure: float
+    notes: list[str]
+
+    @field_validator("current_alignment", "alignment_delta", "trajectory_momentum", mode="before")
+    @classmethod
+    def clamp_signed_fields(cls, value: float) -> float:
+        return _clamp_neg1_pos1(float(value))
+
+    @field_validator(
+        "symbolic_satisfaction_delta",
+        "frustration_delta",
+        "obstruction_level",
+        "leakage_pressure",
+        mode="before",
+    )
+    @classmethod
+    def clamp_unsigned_fields(cls, value: float) -> float:
+        return _clamp_01(float(value))
+
+
+class IdTurnOutput(StrictSchemaModel):
+    id_output: IdOutput
+    updated_affect_state: IdAffectState
+    public_affect_dynamics: PublicAffectDynamicsSummary
+
+
+class PrivateIdTurnOutput(StrictSchemaModel):
+    id_output: IdOutput
+    latent_alignment: LatentDriveAlignment
+    updated_affect_state: IdAffectState
+    public_affect_dynamics: PublicAffectDynamicsSummary

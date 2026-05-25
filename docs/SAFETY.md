@@ -78,3 +78,10 @@
 - Public affect outputs also pass a forbidden-term guard (`u*`, `u_star`, `ultimate need`, `latent alignment`, etc.).
 - If these public checks fail, the turn is blocked and `id_affect_state` is not committed.
 - This phase intentionally does not expose latent/private alignment and does not pass affect state into `IdAgent`.
+
+## Phase 6A-3 private-turn safety boundary
+- `IdAgent.run_turn` receives sealed U* plus public trajectory and previous affect state for private alignment evaluation.
+- Private `LatentDriveAlignment` is never returned to pipeline/downstream layers.
+- Public return object passes dedicated forbidden-term guard before leaving `IdAgent.run_turn`.
+- Pipeline remains on `run_with_state` path in this phase; no runtime wiring changes yet.
+- The system remains a simulation and does not claim literal human feelings.
