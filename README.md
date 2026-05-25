@@ -2,7 +2,7 @@
 
 A **Freud-inspired cognitive architecture for LLM agents** that models internal agent dynamics (Id, Ego, Superego) while preserving modern safety and transparency constraints.
 
-This repository is an open-source, research-oriented scaffold for exploring how an agent can reason through staged internal processes—without exposing private latent objectives and without compromising user welfare.
+This repository is an open-source, research-oriented scaffold for exploring how an agent can reason through staged internal processes—without exposing private latent objectives while making user welfare, truthfulness, autonomy, and safety explicit design constraints.
 
 ## Why this project?
 
@@ -43,7 +43,9 @@ User Input
 - Conversation-trajectory appraisal and structured debug instrumentation.
 - Boundary leakage scanning and safe structured outputs with schema-aware generation.
 
-## Quick example debug trace
+## Illustrative debug trace
+
+The exact fields may evolve, but debug mode is intended to expose public-safe stage-level signals such as:
 
 ```text
 [Id]
