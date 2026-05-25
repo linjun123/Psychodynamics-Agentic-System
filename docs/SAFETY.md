@@ -85,3 +85,10 @@
 - Public return object passes dedicated forbidden-term guard before leaving `IdAgent.run_turn`.
 - Pipeline remains on `run_with_state` path in this phase; no runtime wiring changes yet.
 - The system remains a simulation and does not claim literal human feelings.
+
+## Phase 6A-4 safety notes
+- Pipeline now executes Id through `run_turn` and applies defense-in-depth checks on public `IdTurnOutput`.
+- `latent_alignment`, `PrivateIdTurnOutput`, and sealed `U*` must never appear in pipeline traces or downstream payloads.
+- Public projected affect outputs (trajectory-derived) are validated before Id turn invocation; failures block early and prevent state commit.
+- Post-Id-turn public outputs are validated before affect-state commit.
+- No literal feelings are claimed.

@@ -195,16 +195,16 @@ def test_public_output_guard_blocks_leaks_but_allows_private_field() -> None:
     assert isinstance(out, IdTurnOutput)
 
 
-def test_pipeline_still_uses_run_with_state_path() -> None:
+def test_pipeline_runtime_uses_run_turn_path() -> None:
     class CaptureMock(MockLLMClient):
         def __init__(self, fixtures):
             super().__init__(fixtures)
             self.id_prompt_seen = False
 
         def generate_json(self, **kwargs):
-            if "Id Agent" in kwargs["system_prompt"]:
+            if "Id private-turn module" in kwargs["system_prompt"]:
                 self.id_prompt_seen = True
-            assert "Id private-turn module" not in kwargs["system_prompt"]
+            assert "Id Agent" not in kwargs["system_prompt"]
             return super().generate_json(**kwargs)
 
     capture = CaptureMock(pipeline_fixtures())

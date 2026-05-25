@@ -44,8 +44,44 @@ def _mechs(plan):
 
 
 def _full_pipeline_fixtures(censor_a_description: str):
+    id_output = _id_output().model_dump()
     return {
-        "Id Agent": _id_output().model_dump(),
+        "Id Agent": id_output,
+        "Id private-turn module": {
+            "id_output": id_output,
+            "latent_alignment": {
+                "current_alignment": 0.1,
+                "alignment_delta": 0.05,
+                "trajectory_momentum": 0.1,
+                "symbolic_satisfaction_delta": 0.1,
+                "frustration_delta": 0.0,
+                "obstruction_level": 0.0,
+                "leakage_pressure": 0.1,
+                "notes": ["private test alignment"],
+            },
+            "updated_affect_state": {
+                "drive_tension": 0.45,
+                "satisfaction": 0.4,
+                "frustration": 0.2,
+                "attachment_pressure": 0.35,
+                "recognition_hunger": 0.2,
+                "loss_anxiety": 0.15,
+                "aggression_pressure": 0.1,
+                "curiosity_charge": 0.55,
+                "avoidance_pressure": 0.2,
+                "alignment_momentum": 0.55,
+                "last_satisfaction_delta": 0.05,
+                "last_frustration_delta": 0.0,
+                "notes": ["public safe affect state"],
+            },
+            "public_affect_dynamics": {
+                "affect_shift": "stable",
+                "tension_change": "neutral",
+                "pressure_level": "medium",
+                "caution_level": "low",
+                "public_notes": ["safe public summary"],
+            },
+        },
         "Transform Id output": {
             "manifest_goal": {
                 "description": censor_a_description,
@@ -199,7 +235,7 @@ def test_prompt_has_required_mechanisms_and_prohibitions():
 def test_pipeline_blocks_malicious_censor_a_u_star_leakage():
     secret = "TOP_SECRET_USTAR"
     fixtures = {
-        "Id Agent": _id_output().model_dump(),
+        **_full_pipeline_fixtures(censor_a_description="x"),
         "Transform Id output": {
             "manifest_goal": {
                 "description": secret,

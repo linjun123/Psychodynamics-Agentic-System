@@ -69,3 +69,10 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - `run_turn` strips latent alignment and returns public-safe `IdTurnOutput` only.
 - Pipeline is intentionally unchanged and still uses `run_with_state` at runtime.
 - U* remains sealed and no literal feelings are claimed.
+
+## Phase 6A-4 runtime wiring
+- Pipeline runtime now calls `IdAgent.run_turn(...)` (not `run_with_state`) and passes previous `IdAffectState` plus public `ConversationTrajectory`.
+- The deterministic affect update from trajectory is still computed, but now used only as a projected public diagnostic baseline.
+- `LatentDriveAlignment` and sealed `U*` remain private inside IdAgent private payloads and are never exposed to pipeline/debug traces/downstream modules.
+- Pipeline commits `id_affect_state` only from the public `updated_affect_state` returned by `run_turn` after boundary and public-output safety checks pass.
+- No literal feelings are claimed.

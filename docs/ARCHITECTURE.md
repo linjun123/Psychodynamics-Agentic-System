@@ -80,3 +80,10 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - `run_turn` strips private alignment data and returns only public `IdTurnOutput`.
 - Pipeline runtime flow is intentionally unchanged and still calls `run_with_state`.
 - U* remains sealed, and the model does not claim literal feelings.
+
+## Phase 6A-4: Id private-turn runtime wiring
+- Runtime path switched from `IdAgent.run_with_state` to `IdAgent.run_turn` for pipeline execution.
+- Pipeline sends previous affect state and public conversation trajectory into the private Id turn request.
+- Id may use sealed `U*` privately for latent alignment modeling; that latent alignment is stripped before outputs leave IdAgent.
+- Public deterministic affect updates remain projection-only diagnostics.
+- Pipeline commits only public `updated_affect_state` from Id turn after safety/boundary checks.
