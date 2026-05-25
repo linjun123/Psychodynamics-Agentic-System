@@ -1,4 +1,4 @@
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from psychodynamic_agent.schemas.base import StrictSchemaModel
 from psychodynamic_agent.schemas.censor import AffectiveColor
@@ -9,16 +9,34 @@ def _clamp_01(value: float) -> float:
 
 
 class AffectPropagationTrace(StrictSchemaModel):
-    dominant_affects: list[str]
-    affect_pressure: float
-    approach_avoidance_balance: float
-    boundary_need: float
-    intimacy_pressure: float
-    aggression_pressure: float
-    loss_anxiety: float
-    curiosity_drive: float
-    transformed_style: AffectiveColor
-    notes: list[str]
+    dominant_affects: list[str] = Field(
+        description="Downstream-safe labels for dominant simulated affects; not literal feelings."
+    )
+    affect_pressure: float = Field(
+        description="Aggregated affect-pressure control signal for planning."
+    )
+    approach_avoidance_balance: float = Field(
+        description="Balance signal between approach and avoidance tendencies."
+    )
+    boundary_need: float = Field(
+        description="Boundary-maintenance need signal for safe interaction style."
+    )
+    intimacy_pressure: float = Field(
+        description="Closeness-pressure simulation signal; not a literal feeling."
+    )
+    aggression_pressure: float = Field(
+        description="Aggression-pressure signal for tone and constraint handling."
+    )
+    loss_anxiety: float = Field(
+        description="Loss-anxiety simulation control signal; not a literal feeling."
+    )
+    curiosity_drive: float = Field(
+        description="Curiosity-drive signal influencing exploration depth."
+    )
+    transformed_style: AffectiveColor = Field(
+        description="Affective style controls after censor-safe transformation."
+    )
+    notes: list[str] = Field(description="Downstream-safe affect mapping notes.")
 
     @field_validator(
         "affect_pressure",
@@ -36,13 +54,21 @@ class AffectPropagationTrace(StrictSchemaModel):
 
 
 class EgoAffectSummary(StrictSchemaModel):
-    affective_pressure: float
-    conscious_style_hint: str
-    boundary_need: float
-    collaborative_pull: float
-    caution_need: float
-    intensity_level: float
-    notes: list[str]
+    affective_pressure: float = Field(
+        description="Conscious-compatible affect pressure summary for Ego scoring."
+    )
+    conscious_style_hint: str = Field(
+        description="Conscious-facing style hint derived from simulated affect signals."
+    )
+    boundary_need: float = Field(description="Boundary emphasis level for Ego strategy filtering.")
+    collaborative_pull: float = Field(
+        description="Collaboration tendency signal for user-facing strategy choice."
+    )
+    caution_need: float = Field(description="Caution requirement signal for safer planning.")
+    intensity_level: float = Field(
+        description="Recommended response intensity level; not a literal feeling."
+    )
+    notes: list[str] = Field(description="Conscious-compatible summary notes for Ego planning.")
 
     @field_validator(
         "affective_pressure",
