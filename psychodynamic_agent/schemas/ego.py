@@ -1,5 +1,7 @@
 from typing import Literal
 
+from pydantic import field_validator
+
 from psychodynamic_agent.schemas.base import StrictSchemaModel
 
 EgoStrategyKind = Literal[
@@ -39,6 +41,25 @@ class EgoRealityPlan(StrictSchemaModel):
     preferred_strategy_id: str
     prohibited_strategy_ids: list[str]
     notes: list[str]
+    affective_pressure: float
+    boundary_need: float
+    collaborative_pull: float
+    caution_need: float
+    intensity_level: float
+
+    @field_validator(
+        "manifest_goal_pressure",
+        "affective_pressure",
+        "boundary_need",
+        "collaborative_pull",
+        "caution_need",
+        "intensity_level",
+        mode="before",
+    )
+    @classmethod
+    def _clamp_unit_interval(cls, value: float) -> float:
+        v = float(value)
+        return max(0.0, min(1.0, v))
 
 
 class SituationSummary(StrictSchemaModel):

@@ -126,7 +126,6 @@ class PsychodynamicPipeline:
 
             censor_a_payload = self.censor_a.build_payload(id_output)
             self._assert_boundary(censor_a_payload, "censor_a_input")
-            censor_a_output = self.censor_a.run_payload(censor_a_payload)
             affect_trace = AffectPropagationTrace.model_validate(censor_a_payload["affect_trace"])
             ego_affect_summary = EgoAffectSummary.model_validate(
                 censor_a_payload["ego_affect_summary"]
@@ -136,6 +135,11 @@ class PsychodynamicPipeline:
                     affect_trace=affect_trace,
                     ego_affect_summary=ego_affect_summary,
                 )
+            except ValueError as exc:
+                raise PipelineSafetyError(str(exc)) from exc
+
+            censor_a_output = self.censor_a.run_payload(censor_a_payload)
+            try:
                 assert_affective_color_consistent(
                     affect_trace=affect_trace,
                     affective_color=censor_a_output.affective_color,
@@ -147,6 +151,7 @@ class PsychodynamicPipeline:
             ego_payload = self.ego_agent.build_payload(
                 censor_a_output=censor_a_output,
                 state=state,
+                ego_affect_summary=ego_affect_summary,
             )
             self._assert_boundary(ego_payload, "ego_agent_input")
             ego_report = self.ego_agent.run_payload(ego_payload)

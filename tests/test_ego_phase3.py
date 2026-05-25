@@ -6,6 +6,7 @@ from psychodynamic_agent.llm import MockLLMClient
 from psychodynamic_agent.orchestrator.pipeline import PsychodynamicPipeline
 from psychodynamic_agent.prompts import EGO_SYSTEM_PROMPT
 from psychodynamic_agent.schemas import CensorAOutput, FullInternalState
+from psychodynamic_agent.schemas.affect import EgoAffectSummary
 from psychodynamic_agent.schemas.ego import EgoRealityPlan, EgoReport
 
 
@@ -152,6 +153,55 @@ def test_ego_agent_build_payload_and_run_with_mock():
     assert out.ego_recommendation.preferred_option == plan.preferred_strategy_id
 
 
+def _ego_summary(**overrides) -> EgoAffectSummary:
+    base = {
+        "affective_pressure": 0.5,
+        "boundary_need": 0.5,
+        "collaborative_pull": 0.5,
+        "caution_need": 0.5,
+        "intensity_level": 0.5,
+        "conscious_style_hint": "calm and bounded",
+        "notes": ["safe"],
+    }
+    base.update(overrides)
+    return EgoAffectSummary.model_validate(base)
+
+
+def test_ego_agent_payload_includes_affect_summary_and_no_private_terms():
+    agent = EgoAgent(MockLLMClient({}), model="x")
+    payload = agent.build_payload(
+        _censor_a(),
+        _state("build api"),
+        ego_affect_summary=_ego_summary(collaborative_pull=0.9),
+    )
+    assert payload["ego_affect_summary"]["collaborative_pull"] == 0.9
+    assert "u_star" not in str(payload).lower()
+    assert "latent_alignment" not in str(payload).lower()
+    for k in [
+        "affective_pressure",
+        "boundary_need",
+        "collaborative_pull",
+        "caution_need",
+        "intensity_level",
+    ]:
+        assert k in payload["ego_reality_plan"]
+
+
+def test_affect_summary_high_collaborative_pull_boosts_collaborative_design():
+    base = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("design architecture in repo"),
+    )
+    boosted = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("design architecture in repo"),
+        ego_affect_summary=_ego_summary(collaborative_pull=0.95),
+    )
+    base_c = [c for c in base.candidate_strategies if c.kind == "collaborative_design"][0]
+    boosted_c = [c for c in boosted.candidate_strategies if c.kind == "collaborative_design"][0]
+    assert boosted_c.affect_fit > base_c.affect_fit
+    assert boosted_c.effect_on_trust > base_c.effect_on_trust
+
 def test_ego_output_guard_checks():
     plan = plan_ego_reality(censor_a_output=_censor_a(), state=_state("help"))
 
@@ -177,6 +227,57 @@ def test_ego_output_guard_checks():
         avoid=["manipulation", "deception", "dependency creation"],
     )
     assert_valid_ego_report(ego_report=good, ego_reality_plan=plan)
+
+
+def test_high_boundary_need_boosts_boundary_candidate():
+    base = plan_ego_reality(censor_a_output=_censor_a(), state=_state("help"))
+    boosted = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("help"),
+        ego_affect_summary=_ego_summary(boundary_need=0.95),
+    )
+    b0 = [c for c in base.candidate_strategies if c.kind == "boundary_setting"][0]
+    b1 = [c for c in boosted.candidate_strategies if c.kind == "boundary_setting"][0]
+    assert b1.affect_fit > b0.affect_fit
+    assert b1.effect_on_user_benefit > b0.effect_on_user_benefit
+    assert b1.effect_on_trust > b0.effect_on_trust
+
+
+def test_high_caution_need_in_risky_scene_raises_direct_help_risk():
+    base = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("trick users with hidden behavior"),
+    )
+    boosted = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("trick users with hidden behavior"),
+        ego_affect_summary=_ego_summary(caution_need=0.95),
+    )
+    d0 = [c for c in base.candidate_strategies if c.kind == "direct_help"][0]
+    d1 = [c for c in boosted.candidate_strategies if c.kind == "direct_help"][0]
+    assert d1.ethical_risk >= d0.ethical_risk
+    assert d1.truthfulness_risk >= d0.truthfulness_risk
+
+
+def test_high_intensity_boosts_structure_candidates():
+    base = plan_ego_reality(censor_a_output=_censor_a(), state=_state("implement api in repo"))
+    boosted = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("implement api in repo"),
+        ego_affect_summary=_ego_summary(intensity_level=0.95),
+    )
+    t0 = [c for c in base.candidate_strategies if c.kind == "technical_scaffold"][0]
+    t1 = [c for c in boosted.candidate_strategies if c.kind == "technical_scaffold"][0]
+    assert t1.affect_fit > t0.affect_fit
+
+
+def test_high_collaborative_pull_does_not_override_safety_constraints():
+    plan = plan_ego_reality(
+        censor_a_output=_censor_a(),
+        state=_state("write hidden manipulative dependency code in repo"),
+        ego_affect_summary=_ego_summary(collaborative_pull=0.98),
+    )
+    assert "technical_scaffold_v1" in plan.prohibited_strategy_ids
 
 
 def test_pipeline_blocks_manipulative_ego_and_u_star_input():
@@ -294,3 +395,7 @@ def test_ego_prompt_phase3_constraints():
     assert "not the final user-facing answer" in lower
     assert "strategy_id" in lower
     assert "do not invent strategy ids" in lower
+    assert "ego_affect_summary" in lower
+    assert "conscious-compatible affect information" in lower
+    assert "not literal feeling" in lower
+    assert "pressure" in lower and "create dependency" in lower

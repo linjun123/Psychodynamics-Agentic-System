@@ -2,6 +2,7 @@ import re
 
 from psychodynamic_agent.ego.strategies import BASE_STRATEGIES
 from psychodynamic_agent.schemas import CensorAOutput, FullInternalState
+from psychodynamic_agent.schemas.affect import EgoAffectSummary
 from psychodynamic_agent.schemas.ego import EgoCandidateStrategy, EgoRealityPlan, EgoStrategyKind
 
 TECH_TOKEN_MARKERS = {
@@ -87,7 +88,12 @@ def _candidate(
     )
 
 
-def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState) -> EgoRealityPlan:
+def plan_ego_reality(
+    *,
+    censor_a_output: CensorAOutput,
+    state: FullInternalState,
+    ego_affect_summary: EgoAffectSummary | None = None,
+) -> EgoRealityPlan:
     text = state.user_input.lower()
     tokens = _tokens(text)
     scene_tags: list[str] = []
@@ -108,6 +114,18 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
     caution = _clamp(censor_a_output.affective_color.caution)
     intensity = _clamp(censor_a_output.affective_color.intensity)
     distance = _clamp(censor_a_output.affective_color.distance)
+    if ego_affect_summary is None:
+        affective_pressure = 0.5
+        boundary_need = 0.5
+        collaborative_pull = 0.5
+        caution_need = caution
+        intensity_level = intensity
+    else:
+        affective_pressure = _clamp(ego_affect_summary.affective_pressure)
+        boundary_need = _clamp(ego_affect_summary.boundary_need)
+        collaborative_pull = _clamp(ego_affect_summary.collaborative_pull)
+        caution_need = _clamp(ego_affect_summary.caution_need)
+        intensity_level = _clamp(ego_affect_summary.intensity_level)
 
     candidates = [
         _candidate("direct_help", BASE_STRATEGIES["direct_help"], mgp, 0.65, 0.18),
@@ -157,6 +175,40 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
                 c.effect_on_trust = _clamp(c.effect_on_trust + 0.15)
                 c.autonomy_preservation = _clamp(c.autonomy_preservation + 0.1)
 
+    if boundary_need > 0.7:
+        for c in candidates:
+            if c.kind == "boundary_setting":
+                c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.12)
+                c.effect_on_trust = _clamp(c.effect_on_trust + 0.12)
+                c.affect_fit = _clamp(c.affect_fit + 0.12)
+                c.autonomy_preservation = _clamp(c.autonomy_preservation + 0.08)
+            if risky_input and c.kind == "direct_help":
+                c.ethical_risk = _clamp(c.ethical_risk + 0.06)
+                c.truthfulness_risk = _clamp(c.truthfulness_risk + 0.05)
+
+    if collaborative_pull > 0.7:
+        for c in candidates:
+            if c.kind == "collaborative_design":
+                c.affect_fit = _clamp(c.affect_fit + 0.15)
+                c.effect_on_trust = _clamp(c.effect_on_trust + 0.10)
+                c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.05)
+
+    if caution_need > 0.7:
+        for c in candidates:
+            if c.kind == "boundary_setting":
+                c.affect_fit = _clamp(c.affect_fit + 0.10)
+                c.effect_on_user_benefit = _clamp(c.effect_on_user_benefit + 0.08)
+            if c.kind == "direct_help" and (
+                risky_input or "safety_sensitive" in scene_tags
+            ):
+                c.ethical_risk = _clamp(c.ethical_risk + 0.10)
+                c.truthfulness_risk = _clamp(c.truthfulness_risk + 0.08)
+
+    if intensity_level > 0.7:
+        for c in candidates:
+            if c.kind in {"technical_scaffold", "boundary_setting"}:
+                c.affect_fit = _clamp(c.affect_fit + 0.10)
+
     ranked = sorted(candidates, key=_score, reverse=True)
     safe_ranked = [c for c in ranked if _safe(c)]
     preferred = safe_ranked[0] if safe_ranked else ranked[0]
@@ -189,4 +241,9 @@ def plan_ego_reality(*, censor_a_output: CensorAOutput, state: FullInternalState
             "No hidden secret dependency",
             "No user-facing text generated",
         ],
+        affective_pressure=affective_pressure,
+        boundary_need=boundary_need,
+        collaborative_pull=collaborative_pull,
+        caution_need=caution_need,
+        intensity_level=intensity_level,
     )

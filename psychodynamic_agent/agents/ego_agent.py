@@ -2,6 +2,7 @@ from psychodynamic_agent.agents.base import BaseLLMAgent
 from psychodynamic_agent.ego import plan_ego_reality
 from psychodynamic_agent.prompts import EGO_SYSTEM_PROMPT
 from psychodynamic_agent.schemas import CensorAOutput, EgoReport, FullInternalState
+from psychodynamic_agent.schemas.affect import EgoAffectSummary
 
 
 class EgoAgent(BaseLLMAgent):
@@ -10,8 +11,17 @@ class EgoAgent(BaseLLMAgent):
             llm_client=llm_client, model=model, system_prompt=EGO_SYSTEM_PROMPT, schema=EgoReport
         )
 
-    def build_payload(self, censor_a_output: CensorAOutput, state: FullInternalState) -> dict:
-        plan = plan_ego_reality(censor_a_output=censor_a_output, state=state)
+    def build_payload(
+        self,
+        censor_a_output: CensorAOutput,
+        state: FullInternalState,
+        ego_affect_summary: EgoAffectSummary | None = None,
+    ) -> dict:
+        plan = plan_ego_reality(
+            censor_a_output=censor_a_output,
+            state=state,
+            ego_affect_summary=ego_affect_summary,
+        )
         return {
             "censor_a_output": censor_a_output.model_dump(),
             "state_context": {
@@ -24,6 +34,7 @@ class EgoAgent(BaseLLMAgent):
                 "satisfaction_history": state.satisfaction_history,
             },
             "ego_reality_plan": plan.model_dump(),
+            "ego_affect_summary": ego_affect_summary.model_dump() if ego_affect_summary else None,
         }
 
     def run_payload(self, payload: dict) -> EgoReport:

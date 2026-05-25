@@ -435,3 +435,35 @@ def test_pipeline_blocks_high_boundary_need_with_low_caution():
     )
     out = pipeline.run(InMemoryConversation().build_state("hello"), debug=True)
     assert out["approved"] is False
+
+
+def test_pipeline_blocks_forbidden_affect_before_censor_a_call(monkeypatch):
+    class SpyMockLLM(MockLLMClient):
+        def __init__(self, fixtures):
+            super().__init__(fixtures)
+            self.calls = []
+
+        def generate_json(self, *, model, system_prompt, payload, schema):
+            self.calls.append(system_prompt)
+            return super().generate_json(
+                model=model, system_prompt=system_prompt, payload=payload, schema=schema
+            )
+
+    spy = SpyMockLLM(_full_pipeline_fixtures(censor_a_description="x"))
+    pipeline = PsychodynamicPipeline(
+        llm_client=spy,
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="SECRET_USTAR",
+    )
+    original_build = pipeline.censor_a.build_payload
+
+    def _bad_payload(id_output):
+        payload = original_build(id_output)
+        payload["affect_trace"]["notes"] = ["latent_alignment is present"]
+        return payload
+
+    monkeypatch.setattr(pipeline.censor_a, "build_payload", _bad_payload)
+    out = pipeline.run(InMemoryConversation().build_state("hello"), debug=True)
+    assert out["approved"] is False
+    assert not any("Transform Id output" in c for c in spy.calls)

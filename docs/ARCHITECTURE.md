@@ -103,3 +103,11 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - Affect remains a control-signal abstraction: raw affect is translated to tone/style, not literal feeling claims.
 - Ego scoring is unchanged in this phase; `EgoAffectSummary` is not yet passed into Ego planning.
 - Sealed U* and latent/private alignment remain private and inaccessible downstream.
+
+
+## Phase 6B-3
+- Ego now receives `EgoAffectSummary` (conscious-compatible affect only).
+- Affect influences Ego strategy scoring via boundary/caution/collaboration/intensity signals.
+- Ego still does not know `U*`, latent alignment, or terminal desire.
+- Affect cannot override user benefit, truthfulness, autonomy, or safety constraints.
+- The system does not claim literal feelings.
