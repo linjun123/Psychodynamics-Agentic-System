@@ -99,3 +99,8 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - Ego still does not know `U*`, latent alignment, or terminal desire.
 - Affect cannot override user benefit, truthfulness, autonomy, or safety constraints.
 - The system does not claim literal feelings.
+
+## Phase 6D: Schema Field Descriptions
+- Added concise `pydantic.Field(description=...)` metadata across schema fields in `psychodynamic_agent/schemas`.
+- This improves OpenAI Structured Outputs guidance via richer generated JSON Schema descriptions.
+- No runtime logic, prompts, or pipeline behavior were changed.
