@@ -1,3 +1,4 @@
+from .affect import AffectPropagationTrace, EgoAffectSummary
 from .censor import (
     CensorAOutput,
     CensorATransformDirective,
@@ -32,6 +33,8 @@ __all__ = [
     "LatentDriveAlignment",
     "IdTurnOutput",
     "PrivateIdTurnOutput",
+    "AffectPropagationTrace",
+    "EgoAffectSummary",
     "CensorAOutput",
     "EgoReport",
     "EgoRealityPlan",

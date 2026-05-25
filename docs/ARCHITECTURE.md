@@ -87,3 +87,12 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - Id may use sealed `U*` privately for latent alignment modeling; that latent alignment is stripped before outputs leave IdAgent.
 - Public deterministic affect updates remain projection-only diagnostics.
 - Pipeline commits only public `updated_affect_state` from Id turn after safety/boundary checks.
+
+## Phase 6B-1: Affect Propagation Foundation
+- Adds downstream-safe public schemas: `AffectPropagationTrace` and `EgoAffectSummary`.
+- Adds deterministic mapping from `IdOutput.raw_affect` into style/tone/control signals via `map_id_affect_to_trace`.
+- Adds deterministic conscious-compatible affect summarization via `summarize_affect_for_ego`.
+- Adds guard helpers for forbidden private-term leakage and affective-color consistency checks.
+- Not wired into CensorA/Ego payload flow in this phase.
+- Does not expose U*, latent alignment, terminal desire, or hidden desire.
+- Affect fields remain simulation control signals and do not claim literal feelings.

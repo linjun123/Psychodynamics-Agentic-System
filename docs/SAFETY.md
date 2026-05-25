@@ -92,3 +92,11 @@
 - Public projected affect outputs (trajectory-derived) are validated before Id turn invocation; failures block early and prevent state commit.
 - Post-Id-turn public outputs are validated before affect-state commit.
 - No literal feelings are claimed.
+
+## Phase 6B-1 affect safety boundary
+- `AffectPropagationTrace` and `EgoAffectSummary` are public-safe abstractions derived from `IdOutput.raw_affect`.
+- New guard `assert_affect_trace_public_safe` blocks forbidden private terms (`u*`, `latent_alignment`, `terminal_desire`, etc.) in these objects.
+- New guard `assert_affective_color_consistent` validates deterministic consistency and high-risk caution constraints.
+- This phase does not wire affect propagation into CensorA or Ego runtime payloads.
+- Sealed U* and latent/private alignment remain inaccessible outside Id private logic.
+- Affect modeling remains simulation-only and does not claim literal feelings.

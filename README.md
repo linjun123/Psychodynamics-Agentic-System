@@ -76,3 +76,11 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - `LatentDriveAlignment` and sealed `U*` remain private inside IdAgent private payloads and are never exposed to pipeline/debug traces/downstream modules.
 - Pipeline commits `id_affect_state` only from the public `updated_affect_state` returned by `run_turn` after boundary and public-output safety checks pass.
 - No literal feelings are claimed.
+
+## Phase 6B-1: Affect Propagation Foundation
+- Added `AffectPropagationTrace` and `EgoAffectSummary` schemas for downstream-safe affect control signals.
+- Added deterministic mapper from `IdOutput.raw_affect` to `AffectiveColor` and propagation metrics.
+- Added public safety/consistency guard helpers for affect outputs.
+- Not yet wired into CensorA/Ego runtime payloads.
+- Does not expose U*, latent alignment, terminal desire, or hidden desire.
+- System remains a simulation and does not claim literal feelings.
