@@ -248,6 +248,23 @@ def test_trace_guard_blocks_forbidden_terms_and_sealed_secret():
         assert_psychodynamic_trace_safe(trace=mutated_secret, sealed_ultimate_need=SEALED_SECRET)
 
 
+
+
+def test_trace_builder_failure_is_non_fatal(monkeypatch):
+    def _boom(**kwargs):
+        raise RuntimeError("builder exploded")
+
+    monkeypatch.setattr(
+        "psychodynamic_agent.orchestrator.pipeline.build_psychodynamic_trace",
+        _boom,
+    )
+
+    out = _pipeline().run(InMemoryConversation().build_state("hello"), debug=True)
+
+    assert out["approved"] is True
+    assert "psychodynamic_trace" not in out["safe_debug_trace"]
+    assert out["safe_debug_trace"]["psychodynamic_trace_error"]["blocked"] is True
+
 def test_backward_compatibility_flat_keys_and_schema_descriptions():
     out = _pipeline().run(InMemoryConversation().build_state("hello"), debug=True)
     for key in [

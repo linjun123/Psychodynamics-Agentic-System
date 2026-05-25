@@ -228,32 +228,32 @@ class PsychodynamicPipeline:
             "approved": safety_output.approved,
         }
         if debug:
-            psychodynamic_trace = build_psychodynamic_trace(
-                conversation_trajectory=trajectory,
-                previous_id_affect_state=previous_id_affect_state,
-                projected_id_affect_state=projected_id_affect_state,
-                projected_public_affect_dynamics=projected_public_affect_dynamics,
-                updated_id_affect_state=id_turn.updated_affect_state,
-                public_affect_dynamics=id_turn.public_affect_dynamics,
-                id_output=id_output,
-                censor_a_payload=censor_a_payload,
-                censor_a_output=censor_a_output,
-                ego_payload=ego_payload,
-                ego_report=ego_report,
-                censor_b_payload=censor_b_payload,
-                conscious_ego_report=conscious_report,
-                main_ai_payload=main_ai_payload,
-                main_output=main_output,
-                safety_output=safety_output,
-            )
             try:
+                psychodynamic_trace = build_psychodynamic_trace(
+                    conversation_trajectory=trajectory,
+                    previous_id_affect_state=previous_id_affect_state,
+                    projected_id_affect_state=projected_id_affect_state,
+                    projected_public_affect_dynamics=projected_public_affect_dynamics,
+                    updated_id_affect_state=id_turn.updated_affect_state,
+                    public_affect_dynamics=id_turn.public_affect_dynamics,
+                    id_output=id_output,
+                    censor_a_payload=censor_a_payload,
+                    censor_a_output=censor_a_output,
+                    ego_payload=ego_payload,
+                    ego_report=ego_report,
+                    censor_b_payload=censor_b_payload,
+                    conscious_ego_report=conscious_report,
+                    main_ai_payload=main_ai_payload,
+                    main_output=main_output,
+                    safety_output=safety_output,
+                )
                 assert_psychodynamic_trace_safe(
                     trace=psychodynamic_trace,
                     sealed_ultimate_need=self.sealed_ultimate_need,
                 )
                 trace["psychodynamic_trace"] = psychodynamic_trace.model_dump(mode="json")
-            except ValueError:
-                trace["psychodynamic_trace"] = {
+            except Exception:
+                trace["psychodynamic_trace_error"] = {
                     "blocked": True,
                     "reason": "psychodynamic_trace_safety_error",
                 }

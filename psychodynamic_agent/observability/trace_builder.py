@@ -91,9 +91,11 @@ def build_psychodynamic_trace(
             outputs={
                 "updated_id_affect_state": updated_id_affect_state.model_dump(mode="json"),
                 "public_affect_dynamics": public_affect_dynamics.model_dump(mode="json"),
-                "drive_state": id_output.drive_state,
-                "raw_affect": id_output.raw_affect,
-                "object_cathexis": id_output.object_cathexis,
+                "drive_state": id_output.drive_state.model_dump(mode="json"),
+                "raw_affect": id_output.raw_affect.model_dump(mode="json"),
+                "object_cathexis": [
+                    item.model_dump(mode="json") for item in id_output.object_cathexis
+                ],
                 "leakage_risk_self_check": id_output.leakage_risk_self_check,
             },
             safety_notes=[
@@ -104,7 +106,7 @@ def build_psychodynamic_trace(
         affect_stage=TraceStage(
             name="affect",
             summary="Raw affect mapped into downstream-safe style and strategy signals.",
-            inputs={"raw_affect": id_output.raw_affect},
+            inputs={"raw_affect": id_output.raw_affect.model_dump(mode="json")},
             outputs={
                 "affect_trace": affect_trace,
                 "ego_affect_summary": ego_affect_summary,
