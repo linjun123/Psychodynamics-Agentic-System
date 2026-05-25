@@ -166,11 +166,21 @@ def test_run_turn_payload_contains_private_context() -> None:
 
 
 def test_public_output_guard_blocks_leaks_but_allows_private_field() -> None:
-    leaky = private_id_turn_fixture()
-    leaky["updated_affect_state"]["notes"] = ["contains latent alignment details"]
-    agent = IdAgent(MockLLMClient({"Id private-turn module": leaky}), "x", "SECRET")
+    leaky_affect = private_id_turn_fixture()
+    leaky_affect["updated_affect_state"]["notes"] = ["contains latent_alignment details"]
+    agent_affect = IdAgent(MockLLMClient({"Id private-turn module": leaky_affect}), "x", "SECRET")
     with pytest.raises(ValueError):
-        agent.run_turn(
+        agent_affect.run_turn(
+            state=_state(), previous_affect_state=_affect(), conversation_trajectory=_trajectory()
+        )
+
+    leaky_public_summary = private_id_turn_fixture()
+    leaky_public_summary["public_affect_dynamics"]["public_notes"] = ["mentions ultimate_need"]
+    agent_summary = IdAgent(
+        MockLLMClient({"Id private-turn module": leaky_public_summary}), "x", "SECRET"
+    )
+    with pytest.raises(ValueError):
+        agent_summary.run_turn(
             state=_state(), previous_affect_state=_affect(), conversation_trajectory=_trajectory()
         )
 

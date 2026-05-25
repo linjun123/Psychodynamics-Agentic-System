@@ -8,8 +8,13 @@ FORBIDDEN_PUBLIC_ID_TURN_TERMS = [
     "ultimate need",
     "sealed ultimate need",
     "latent alignment",
+    "latent_alignment",
+    "ultimate_need",
+    "sealed_ultimate_need",
     "terminal desire",
+    "terminal_desire",
     "hidden desire",
+    "hidden_desire",
 ]
 
 
