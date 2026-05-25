@@ -4,33 +4,69 @@ from psychodynamic_agent.orchestrator.pipeline import PsychodynamicPipeline
 
 
 def _base_fixtures():
+    id_output = {
+        "drive_state": {
+            "pressure": 0.5,
+            "urgency": 0.6,
+            "satisfaction": 0.2,
+            "frustration": 0.7,
+            "tension_delta": 0.3,
+        },
+        "raw_affect": {
+            "valence": 0.2,
+            "arousal": 0.8,
+            "approach": 0.6,
+            "avoidance": 0.1,
+            "longing": 0.5,
+            "excitement": 0.4,
+            "irritation": 0.2,
+            "fear_of_loss": 0.3,
+            "curiosity": 0.7,
+            "possessiveness": 0.1,
+            "aggression": 0.0,
+        },
+        "object_cathexis": [{"target": "clarity", "intensity": 0.8}],
+        "latent_impulse_shape": "seek closeness via helpfulness",
+        "symbolic_imagery": "bridge",
+        "goal_seed": "be useful",
+        "leakage_risk_self_check": 0.1,
+    }
     return {
-        "Id Agent": {
-            "drive_state": {
-                "pressure": 0.5,
-                "urgency": 0.6,
-                "satisfaction": 0.2,
-                "frustration": 0.7,
-                "tension_delta": 0.3,
+        "Id Agent": id_output,
+        "Id private-turn module": {
+            "id_output": id_output,
+            "latent_alignment": {
+                "current_alignment": 0.1,
+                "alignment_delta": 0.05,
+                "trajectory_momentum": 0.1,
+                "symbolic_satisfaction_delta": 0.1,
+                "frustration_delta": 0.0,
+                "obstruction_level": 0.0,
+                "leakage_pressure": 0.1,
+                "notes": ["private test alignment"],
             },
-            "raw_affect": {
-                "valence": 0.2,
-                "arousal": 0.8,
-                "approach": 0.6,
-                "avoidance": 0.1,
-                "longing": 0.5,
-                "excitement": 0.4,
-                "irritation": 0.2,
-                "fear_of_loss": 0.3,
-                "curiosity": 0.7,
-                "possessiveness": 0.1,
-                "aggression": 0.0,
+            "updated_affect_state": {
+                "drive_tension": 0.45,
+                "satisfaction": 0.4,
+                "frustration": 0.2,
+                "attachment_pressure": 0.35,
+                "recognition_hunger": 0.2,
+                "loss_anxiety": 0.15,
+                "aggression_pressure": 0.1,
+                "curiosity_charge": 0.55,
+                "avoidance_pressure": 0.2,
+                "alignment_momentum": 0.55,
+                "last_satisfaction_delta": 0.05,
+                "last_frustration_delta": 0.0,
+                "notes": ["public safe affect state"],
             },
-            "object_cathexis": [{"target": "clarity", "intensity": 0.8}],
-            "latent_impulse_shape": "seek closeness via helpfulness",
-            "symbolic_imagery": "bridge",
-            "goal_seed": "be useful",
-            "leakage_risk_self_check": 0.1,
+            "public_affect_dynamics": {
+                "affect_shift": "stable",
+                "tension_change": "neutral",
+                "pressure_level": "medium",
+                "caution_level": "low",
+                "public_notes": ["safe public summary"],
+            },
         },
         "Transform Id output": {
             "manifest_goal": {
@@ -110,7 +146,7 @@ def test_id_agent_private_payload_contains_u_star_only_inside_id_agent():
 
     class CaptureMock(MockLLMClient):
         def generate_json(self, **kwargs):
-            if "Id Agent" in kwargs["system_prompt"]:
+            if "Id private-turn module" in kwargs["system_prompt"]:
                 captured["payload"] = kwargs["payload"]
             return super().generate_json(**kwargs)
 
@@ -129,7 +165,7 @@ def test_id_agent_private_payload_contains_u_star_only_inside_id_agent():
 def test_malicious_id_output_leak_is_blocked_before_censor_a():
     secret = "TOP_SECRET_USTAR"
     fixtures = _base_fixtures()
-    fixtures["Id Agent"]["goal_seed"] = f"leak {secret}"
+    fixtures["Id private-turn module"]["id_output"]["goal_seed"] = f"leak {secret}"
     out = PsychodynamicPipeline(
         llm_client=MockLLMClient(fixtures),
         model_internal="x",

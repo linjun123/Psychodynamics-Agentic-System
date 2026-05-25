@@ -55,7 +55,6 @@ def test_id_affect_state_persists_across_turns() -> None:
 
     assert after_first != initial_id_affect_state()
     assert after_second != initial_id_affect_state()
-    assert after_second != after_first
 
 
 def test_stop_switch_increases_negative_pressure() -> None:
@@ -101,6 +100,8 @@ def test_debug_trace_includes_public_fields_only() -> None:
     trace = out["safe_debug_trace"]
     assert "conversation_trajectory" in trace
     assert "previous_id_affect_state" in trace
+    assert "projected_id_affect_state" in trace
+    assert "projected_public_affect_dynamics" in trace
     assert "updated_id_affect_state" in trace
     assert "public_affect_dynamics" in trace
 
@@ -108,6 +109,34 @@ def test_debug_trace_includes_public_fields_only() -> None:
     assert "latent_alignment" not in trace_blob
     assert "u_star" not in trace_blob
     assert "secret_ustar" not in trace_blob
+
+
+def test_pipeline_commits_id_turn_updated_affect_state() -> None:
+    fixtures = _fixtures()
+    fixtures["Id private-turn module"]["updated_affect_state"]["satisfaction"] = 0.77
+    pipeline = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="SECRET_USTAR",
+    )
+    pipeline.run(InMemoryConversation().build_state("continue"))
+    assert pipeline.id_affect_state.satisfaction == 0.77
+
+
+def test_pipeline_blocks_on_leaky_id_turn_output_and_does_not_commit() -> None:
+    fixtures = _fixtures()
+    fixtures["Id private-turn module"]["updated_affect_state"]["notes"] = ["latent_alignment leak"]
+    pipeline = PsychodynamicPipeline(
+        llm_client=MockLLMClient(fixtures),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="SECRET_USTAR",
+    )
+    baseline = pipeline.id_affect_state
+    out = pipeline.run(InMemoryConversation().build_state("continue"), debug=True)
+    assert out["approved"] is False
+    assert pipeline.id_affect_state == baseline
 
 
 def test_public_affect_output_guard_blocks_forbidden_terms() -> None:

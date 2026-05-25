@@ -16,6 +16,7 @@ from psychodynamic_agent.id_dynamics import (
     update_id_affect_state_from_trajectory,
 )
 from psychodynamic_agent.id_dynamics.output_guard import assert_public_affect_outputs_safe
+from psychodynamic_agent.id_dynamics.private_turn_guard import assert_public_id_turn_output_safe
 from psychodynamic_agent.orchestrator.logging import safe_serialize
 from psychodynamic_agent.safety import assert_no_secret
 from psychodynamic_agent.schemas import CensorBDefensePlan
@@ -68,31 +69,54 @@ class PsychodynamicPipeline:
         try:
             trajectory = appraise_conversation_trajectory(state)
             previous_id_affect_state = self.id_affect_state
-            updated_id_affect_state = update_id_affect_state_from_trajectory(
+            projected_id_affect_state = update_id_affect_state_from_trajectory(
                 previous=previous_id_affect_state,
                 trajectory=trajectory,
             )
-            public_affect_dynamics = summarize_public_affect_dynamics(
+            projected_public_affect_dynamics = summarize_public_affect_dynamics(
                 previous=previous_id_affect_state,
-                updated=updated_id_affect_state,
+                updated=projected_id_affect_state,
                 trajectory=trajectory,
             )
 
             self._assert_boundary(trajectory.model_dump(), "conversation_trajectory")
-            self._assert_boundary(updated_id_affect_state.model_dump(), "id_affect_state_update")
-            self._assert_boundary(public_affect_dynamics.model_dump(), "public_affect_dynamics")
+            self._assert_boundary(
+                projected_id_affect_state.model_dump(), "id_affect_state_projection"
+            )
+            self._assert_boundary(
+                projected_public_affect_dynamics.model_dump(), "public_affect_dynamics_projection"
+            )
             try:
                 assert_public_affect_outputs_safe(
                     trajectory=trajectory,
-                    affect_state=updated_id_affect_state,
-                    public_summary=public_affect_dynamics,
+                    affect_state=projected_id_affect_state,
+                    public_summary=projected_public_affect_dynamics,
                 )
             except ValueError as exc:
                 raise PipelineSafetyError(str(exc)) from exc
 
-            self.id_affect_state = updated_id_affect_state
+            try:
+                id_turn = self.id_agent.run_turn(
+                    state=state,
+                    previous_affect_state=previous_id_affect_state,
+                    conversation_trajectory=trajectory,
+                )
+            except ValueError as exc:
+                raise PipelineSafetyError(str(exc)) from exc
+            self._assert_boundary(id_turn.id_output.model_dump(), "id_output_before_censor_a")
+            self._assert_boundary(
+                id_turn.updated_affect_state.model_dump(), "id_turn_updated_affect_state"
+            )
+            self._assert_boundary(
+                id_turn.public_affect_dynamics.model_dump(), "id_turn_public_affect_dynamics"
+            )
+            try:
+                assert_public_id_turn_output_safe(id_turn)
+            except ValueError as exc:
+                raise PipelineSafetyError(str(exc)) from exc
 
-            id_output = self.id_agent.run_with_state(state)
+            self.id_affect_state = id_turn.updated_affect_state
+            id_output = id_turn.id_output
             self._assert_boundary(id_output.model_dump(), "id_output_before_censor_a")
 
             censor_a_payload = self.censor_a.build_payload(id_output)
@@ -160,8 +184,10 @@ class PsychodynamicPipeline:
         trace = {
             "conversation_trajectory": trajectory.model_dump(),
             "previous_id_affect_state": previous_id_affect_state.model_dump(),
-            "updated_id_affect_state": updated_id_affect_state.model_dump(),
-            "public_affect_dynamics": public_affect_dynamics.model_dump(),
+            "projected_id_affect_state": projected_id_affect_state.model_dump(),
+            "projected_public_affect_dynamics": projected_public_affect_dynamics.model_dump(),
+            "updated_id_affect_state": id_turn.updated_affect_state.model_dump(),
+            "public_affect_dynamics": id_turn.public_affect_dynamics.model_dump(),
             "id_output": id_output.model_dump(),
             "censor_a_output": censor_a_output.model_dump(),
             "ego_report": ego_report.model_dump(),
