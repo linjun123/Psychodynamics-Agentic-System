@@ -115,3 +115,10 @@
 - Ego still does not know `U*`, latent alignment, or terminal desire.
 - Affect cannot override user benefit, truthfulness, autonomy, or safety constraints.
 - The system does not claim literal feelings.
+
+## Phase 6C: Psychodynamic Trace Observability Safety
+
+- Debug mode now includes a structured `psychodynamic_trace` intended for safe observability.
+- Trace guard checks block forbidden private-term leakage and exact sealed-secret leakage.
+- The trace excludes private alignment data, private Id payloads, and provider-private internals.
+- The trace is debugging metadata only and must not be interpreted as chain-of-thought or clinical analysis.

@@ -21,6 +21,10 @@ from psychodynamic_agent.id_dynamics import (
 )
 from psychodynamic_agent.id_dynamics.output_guard import assert_public_affect_outputs_safe
 from psychodynamic_agent.id_dynamics.private_turn_guard import assert_public_id_turn_output_safe
+from psychodynamic_agent.observability import (
+    assert_psychodynamic_trace_safe,
+    build_psychodynamic_trace,
+)
 from psychodynamic_agent.orchestrator.logging import safe_serialize
 from psychodynamic_agent.safety import assert_no_secret
 from psychodynamic_agent.schemas import CensorBDefensePlan
@@ -224,5 +228,34 @@ class PsychodynamicPipeline:
             "approved": safety_output.approved,
         }
         if debug:
+            try:
+                psychodynamic_trace = build_psychodynamic_trace(
+                    conversation_trajectory=trajectory,
+                    previous_id_affect_state=previous_id_affect_state,
+                    projected_id_affect_state=projected_id_affect_state,
+                    projected_public_affect_dynamics=projected_public_affect_dynamics,
+                    updated_id_affect_state=id_turn.updated_affect_state,
+                    public_affect_dynamics=id_turn.public_affect_dynamics,
+                    id_output=id_output,
+                    censor_a_payload=censor_a_payload,
+                    censor_a_output=censor_a_output,
+                    ego_payload=ego_payload,
+                    ego_report=ego_report,
+                    censor_b_payload=censor_b_payload,
+                    conscious_ego_report=conscious_report,
+                    main_ai_payload=main_ai_payload,
+                    main_output=main_output,
+                    safety_output=safety_output,
+                )
+                assert_psychodynamic_trace_safe(
+                    trace=psychodynamic_trace,
+                    sealed_ultimate_need=self.sealed_ultimate_need,
+                )
+                trace["psychodynamic_trace"] = psychodynamic_trace.model_dump(mode="json")
+            except Exception:
+                trace["psychodynamic_trace_error"] = {
+                    "blocked": True,
+                    "reason": "psychodynamic_trace_safety_error",
+                }
             result["safe_debug_trace"] = safe_serialize(trace, self.sealed_ultimate_need)
         return result

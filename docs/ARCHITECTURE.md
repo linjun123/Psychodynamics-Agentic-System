@@ -111,3 +111,12 @@ Only the manifest `CensorAOutput` is forwarded to Ego; the transform plan is int
 - Ego still does not know `U*`, latent alignment, or terminal desire.
 - Affect cannot override user benefit, truthfulness, autonomy, or safety constraints.
 - The system does not claim literal feelings.
+
+## Phase 6C: Psychodynamic Trace Observability
+
+The pipeline now emits a structured `psychodynamic_trace` object under `safe_debug_trace` when `debug=True`.
+
+- Stage-organized observability covers conversation appraisal, Id public outputs, affect mapping, Censor A, Ego, Censor B, MainAI, and final safety.
+- The trace is built only from safe artifacts already available in the orchestrated run.
+- Private alignment content, private Id payloads, sealed drive content, and provider-private internals are omitted.
+- The artifact is for observability and debugging only, not chain-of-thought and not clinical interpretation.

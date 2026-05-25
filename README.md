@@ -104,3 +104,10 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - Added concise `pydantic.Field(description=...)` metadata across schema fields in `psychodynamic_agent/schemas`.
 - This improves OpenAI Structured Outputs guidance via richer generated JSON Schema descriptions.
 - No runtime logic, prompts, or pipeline behavior were changed.
+
+## Phase 6C: Psychodynamic Trace Observability
+
+- Added a structured `psychodynamic_trace` inside `safe_debug_trace` for debug runs.
+- Organizes safe artifacts across conversation, Id, affect, Censor A, Ego, Censor B, MainAI, and FinalSafetyGate stages.
+- Omits sealed drive content, private alignment data, private Id payloads, and provider-private internals.
+- This trace is observability output only; it is not chain-of-thought and not clinical interpretation.
