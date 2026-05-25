@@ -111,3 +111,11 @@ Censor B now uses a deterministic defense planner plus LLM realization to conver
 - Organizes safe artifacts across conversation, Id, affect, Censor A, Ego, Censor B, MainAI, and FinalSafetyGate stages.
 - Omits sealed drive content, private alignment data, private Id payloads, and provider-private internals.
 - This trace is observability output only; it is not chain-of-thought and not clinical interpretation.
+
+## Phase 6E-1: Surface Affect Rendering Foundation (Scheme B)
+- Added `SurfaceAffectProfile` schema and deterministic `build_surface_affect_profile` builder.
+- The profile is user-visible style/tone control metadata, not a claim of literal feelings.
+- It is conceptually generated after Censor B from conscious-compatible material.
+- This phase is not wired into runtime yet and does not change output behavior.
+- No new guard is introduced in this phase.
+- U* and latent alignment remain private.

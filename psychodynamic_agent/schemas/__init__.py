@@ -22,6 +22,7 @@ from .id import (
 from .main_ai import MainAIConstraint, MainAIOutput, MainAIResponsePlan
 from .safety import SafetyGateOutput
 from .state import FullInternalState, Message
+from .surface_affect import SurfaceAffectProfile, SurfaceAffectStyle
 
 __all__ = [
     "Message",
@@ -35,6 +36,8 @@ __all__ = [
     "PrivateIdTurnOutput",
     "AffectPropagationTrace",
     "EgoAffectSummary",
+    "SurfaceAffectProfile",
+    "SurfaceAffectStyle",
     "CensorAOutput",
     "EgoReport",
     "EgoRealityPlan",

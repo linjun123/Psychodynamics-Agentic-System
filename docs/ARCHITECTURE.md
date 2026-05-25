@@ -120,3 +120,12 @@ The pipeline now emits a structured `psychodynamic_trace` object under `safe_deb
 - The trace is built only from safe artifacts already available in the orchestrated run.
 - Private alignment content, private Id payloads, sealed drive content, and provider-private internals are omitted.
 - The artifact is for observability and debugging only, not chain-of-thought and not clinical interpretation.
+
+## Phase 6E-1: Surface Affect Rendering Foundation (Scheme B)
+- Added `SurfaceAffectProfile` as a downstream-safe user-visible style control schema.
+- Added deterministic `build_surface_affect_profile(...)` using `ConsciousEgoReport`, `CensorBDefensePlan`, and optional `EgoAffectSummary`.
+- This profile is a style-control artifact (warmth/caution/energy/composure/etc.), not literal feeling.
+- Conceptually produced after Censor B from conscious-compatible inputs.
+- Not wired into `PsychodynamicPipeline` in this phase; no runtime behavior changes.
+- No new guard added; safety guard layering is deferred.
+- U* and latent/private alignment remain sealed.

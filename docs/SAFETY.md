@@ -122,3 +122,11 @@
 - Trace guard checks block forbidden private-term leakage and exact sealed-secret leakage.
 - The trace excludes private alignment data, private Id payloads, and provider-private internals.
 - The trace is debugging metadata only and must not be interpreted as chain-of-thought or clinical analysis.
+
+## Phase 6E-1 safety notes
+- Adds only a downstream-safe `SurfaceAffectProfile` schema and deterministic builder foundation.
+- The profile is user-visible style/tone control, not a literal feeling claim.
+- Inputs are conscious-compatible artifacts (`ConsciousEgoReport`, `CensorBDefensePlan`, optional `EgoAffectSummary`), conceptually after Censor B.
+- This phase does not wire runtime pipeline usage and does not change output behavior.
+- No new safety guard is introduced in this phase.
+- Sealed U* and latent/private alignment remain private and must not be exposed.
