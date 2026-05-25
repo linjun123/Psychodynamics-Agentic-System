@@ -2,6 +2,7 @@ import pytest
 
 from psychodynamic_agent.agents import IdAgent
 from psychodynamic_agent.llm import MockLLMClient
+from psychodynamic_agent.llm.openai_client import LLMOutputError
 from psychodynamic_agent.orchestrator.memory import InMemoryConversation
 from psychodynamic_agent.orchestrator.pipeline import PsychodynamicPipeline
 from psychodynamic_agent.prompts import ID_SYSTEM_PROMPT, ID_TURN_SYSTEM_PROMPT
@@ -236,3 +237,42 @@ def test_prompts_include_phase6a3_requirements() -> None:
     ]
     for item in required_substrings:
         assert item in ID_TURN_SYSTEM_PROMPT
+
+
+def test_run_turn_retries_once_then_succeeds() -> None:
+    class FlakyLLM:
+        def __init__(self):
+            self.calls = 0
+
+        def generate_json(self, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                raise LLMOutputError("transient model failure")
+            return private_id_turn_fixture()
+
+    llm = FlakyLLM()
+    agent = IdAgent(llm, "x", "SECRET_USTAR")
+    out = agent.run_turn(
+        state=_state(), previous_affect_state=_affect(), conversation_trajectory=_trajectory()
+    )
+    assert isinstance(out, IdTurnOutput)
+    assert llm.calls == 2
+
+
+def test_pipeline_blocks_cleanly_when_run_turn_keeps_failing() -> None:
+    class AlwaysFailingTurnMock(MockLLMClient):
+        def generate_json(self, **kwargs):
+            if "Id private-turn module" in kwargs["system_prompt"]:
+                raise LLMOutputError("persistent failure")
+            return super().generate_json(**kwargs)
+
+    baseline_pipeline = PsychodynamicPipeline(
+        llm_client=AlwaysFailingTurnMock(pipeline_fixtures()),
+        model_internal="x",
+        model_main="y",
+        sealed_ultimate_need="SECRET_USTAR",
+    )
+    baseline = baseline_pipeline.id_affect_state
+    out = baseline_pipeline.run(_state())
+    assert out["approved"] is False
+    assert baseline_pipeline.id_affect_state == baseline
