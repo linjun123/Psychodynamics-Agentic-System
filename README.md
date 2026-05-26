@@ -21,36 +21,36 @@ It is designed around:
 
 ```mermaid
 flowchart TD
-    U[User Input] --> CT[Conversation Trajectory<br/>Public appraisal of the current turn]
+    U["User Input"] --> CT["Conversation Trajectory<br/>Public appraisal of the current turn"]
 
-    CT --> ID[Id Agent<br/>Impulse / drive proposal<br/>public affect update]
-    USTAR[(Sealed U*)<br/>private latent drive anchor] -. private only .-> ID
+    CT --> ID["Id Agent<br/>Impulse / drive proposal<br/>Public affect update"]
+    USTAR["Sealed U*<br/>Private latent drive anchor"] -.-> ID
 
-    ID --> CA[Censor A<br/>Transforms raw impulse into<br/>safer manifest content]
+    ID --> CA["Censor A<br/>Transforms raw impulse into<br/>safer manifest content"]
 
-    CA --> EGO[Ego Planner<br/>Reality-principle mediation<br/>strategy and consequence scoring]
+    CA --> EGO["Ego Planner<br/>Reality-principle mediation<br/>Strategy and consequence scoring"]
 
-    EGO --> CB[Censor B<br/>Defense / compatibility layer<br/>converts Ego output into conscious-compatible report]
+    EGO --> CB["Censor B<br/>Defense / compatibility layer<br/>Conscious-compatible report"]
 
-    CB --> SAP[SurfaceAffectProfile<br/>User-visible tone, pacing,<br/>emotional color, composure metadata]
+    CB --> SAP["SurfaceAffectProfile<br/>Tone, pacing, emotional color,<br/>composure, and style metadata"]
 
-    SAP --> MAIN[Superego / MainAI Integration<br/>Safety, ethics, truthfulness,<br/>autonomy, user welfare]
+    SAP --> MAIN["Superego / MainAI Integration<br/>Safety, truthfulness, autonomy,<br/>and user welfare"]
 
-    MAIN --> FSG[Final Safety Gate<br/>Boundary and output validation]
+    MAIN --> FSG["Final Safety Gate<br/>Boundary and output validation"]
 
-    FSG --> R[User-Facing Response]
+    FSG --> R["User-Facing Response"]
 
-    ID -. public-safe debug only .-> TRACE[psychodynamic_trace<br/>safe_debug_trace observability]
-    CA -. public-safe debug only .-> TRACE
-    EGO -. public-safe debug only .-> TRACE
-    CB -. public-safe debug only .-> TRACE
-    SAP -. public-safe debug only .-> TRACE
-    MAIN -. public-safe debug only .-> TRACE
-    FSG -. public-safe debug only .-> TRACE
+    ID -.-> TRACE["psychodynamic_trace<br/>Public-safe debug observability"]
+    CA -.-> TRACE
+    EGO -.-> TRACE
+    CB -.-> TRACE
+    SAP -.-> TRACE
+    MAIN -.-> TRACE
+    FSG -.-> TRACE
 ```
 
-- Solid arrows are runtime dataflow.
-- Dotted arrows are private-only or debug-only relationships.
+- Solid arrows show the main runtime dataflow.
+- Dotted arrows show private-only or debug-observability relationships.
 - `U*` remains sealed inside the Id stage and is not exposed downstream.
 - `psychodynamic_trace` is public-safe observability output, not chain-of-thought and not clinical interpretation.
 
@@ -86,8 +86,8 @@ flowchart TD
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/linjun123/Psychodynamics-simple-model.git
-cd Psychodynamics-simple-model
+git clone https://github.com/linjun123/Psychodynamics-Agentic-System.git
+cd Psychodynamics-Agentic-System
 ```
 
 ### 2. Create an environment
