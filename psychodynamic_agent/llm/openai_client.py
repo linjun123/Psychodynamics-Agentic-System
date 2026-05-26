@@ -4,6 +4,11 @@ from typing import Any
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 
+from psychodynamic_agent.llm.schema_sanitizer import (
+    assert_no_ref_siblings,
+    sanitize_schema_for_openai,
+)
+
 
 class LLMOutputError(RuntimeError):
     pass
@@ -21,6 +26,10 @@ class OpenAIResponsesClient:
         payload: dict[str, Any],
         schema: type[BaseModel],
     ) -> dict[str, Any]:
+        raw_schema = schema.model_json_schema()
+        openai_schema = sanitize_schema_for_openai(raw_schema)
+        assert_no_ref_siblings(openai_schema)
+
         resp = self.client.responses.create(
             model=model,
             input=[
@@ -31,7 +40,7 @@ class OpenAIResponsesClient:
                 "format": {
                     "type": "json_schema",
                     "name": schema.__name__,
-                    "schema": schema.model_json_schema(),
+                    "schema": openai_schema,
                     "strict": True,
                 }
             },

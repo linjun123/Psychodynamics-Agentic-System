@@ -147,3 +147,5 @@
 - Surface affect does not override hard constraints, refusal logic, risk flags, or forbidden content.
 - No new guard is added in this phase.
 - U* and latent/private alignment artifacts remain private and excluded from MainAI payload planning schema.
+
+- OpenAIResponsesClient now sanitizes Pydantic JSON Schema before Structured Outputs submission by stripping all `$ref` sibling keywords while preserving rich schema metadata on non-`$ref` nodes.
