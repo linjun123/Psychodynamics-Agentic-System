@@ -1,21 +1,11 @@
 # Psychodynamic Agent
 
-A Freud-inspired cognitive architecture for LLM agents that models staged internal dynamics: impulse generation, censorship, reality planning, safety/moral integration, affect propagation, surface affect rendering, and final response generation.
+We are interested in using large language models to model human nature in a deeper sense: not only as rational agents that generate coherent responses, but as psychologically complex beings whose emotions, desires, tensions, and contradictions can be reflected in their words. Such a model must account for the layered structure of personality, the coexistence of conflicting drives, and the subtle ways in which inner states reveal themselves through language.
+
+Technically, this is a Freud-inspired cognitive architecture for LLM agents that models staged internal dynamics: impulse generation, censorship, reality planning, safety/moral integration, affect propagation, surface affect rendering, and final response generation.
 
 This is a simulation-oriented research and engineering scaffold. It does not claim that LLMs have literal unconscious states, personhood, or feelings.
 
-## Why this project?
-
-Most agent frameworks optimize for task completion. This project asks a different question: can an LLM agent expose a structured, auditable internal process before producing a final answer?
-
-It is designed around:
-
-- Interpretable agent architecture with explicit stage boundaries.
-- Internal conflict modeling across impulse, mediation, and safety layers.
-- Separation of private latent state from public-safe observability.
-- Affect treated as style/control metadata, not literal feeling.
-- Safety, truthfulness, autonomy, and user welfare as explicit design constraints.
-- Psychodynamic concepts used as engineering metaphors, not clinical claims.
 
 ## Architecture at a glance
 
