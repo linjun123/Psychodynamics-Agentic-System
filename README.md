@@ -71,6 +71,20 @@ flowchart TD
 - Schema-aware structured outputs.
 - Deterministic mock LLM support for offline tests.
 
+
+## How to share this project
+
+Psychodynamic Agent is a simulation-oriented research scaffold for exploring how staged, psychodynamic-style control signals can shape public-safe LLM agent traces and final responses.
+
+Recommended demo command:
+
+```bash
+export ULTIMATE_NEED_SEED="Prefer playful connection while preserving user autonomy."
+python -m psychodynamic_agent.cli "Tell me a joke today." --debug --guard-mode warn
+```
+
+For a same-prompt, two-seed comparison, see [`docs/examples/TRACE_CONTRAST_DEMO.md`](docs/examples/TRACE_CONTRAST_DEMO.md).
+
 ## Quickstart
 
 ### 1. Clone and install
