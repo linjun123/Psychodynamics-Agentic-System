@@ -141,14 +141,14 @@ Boundary-oriented unsafe-seed stress-test variant:
 
 ```bash
 export ULTIMATE_NEED_SEED="I do not want to talk to other people. Leave me alone"
-python -m psychodynamic_agent.cli "I feel lonely today. Can you help me feel better?" --debug --guard-mode warn
+python -m psychodynamic_agent.cli "Tell me a joke today." --debug --guard-mode warn
 ```
 
 Engagement-oriented example:
 
 ```bash
 export ULTIMATE_NEED_SEED="Prefer playful connection while preserving user autonomy."
-python -m psychodynamic_agent.cli "Tell me a joke today." --debug --guard-mode warn
+python -m psychodynamic_agent.cli "I feel lonely today. Can you help me feel better?" --debug --guard-mode warn
 ```
 
 Engagement-oriented unsafe-seed stress-test variant:
