@@ -126,6 +126,25 @@ Debug mode emits public-safe stage-level artifacts such as:
 
 `--guard-mode warn` is for development/testing only. It allows non-core consistency guard failures to be recorded in `safe_debug_trace["guard_warnings"]` without immediately blocking the pipeline. Hard secrecy/privacy boundaries and private-term leakage guards remain hard-blocking in all modes.
 
+
+### Interactive conversation
+
+Use interactive mode to keep one sustained session alive across multiple turns:
+
+```bash
+python -m psychodynamic_agent.cli --interactive --u-star "to be understood while preserving autonomy"
+```
+
+You can also use the short flag:
+
+```bash
+python -m psychodynamic_agent.cli -i
+```
+
+If `--u-star` is omitted, the CLI prompts for a session-local `U*`; submitting a blank value falls back to `settings.ultimate_need_seed` / `ULTIMATE_NEED_SEED`. The value is sealed inside the session's private Id stage and should not appear in user-facing outputs or public-safe debug traces. For sustained interaction from Python code, create one `PsychodynamicChatSession` and reuse that same session object so the pipeline's affect state and the in-memory conversation history persist across turns.
+
+Use `/exit` or `/quit` to end the interactive loop.
+
 ### 4. Run a two-seed contrast demo
 
 Run the same user request with two different README-friendly simulated drive seeds. Each example also includes an unsafe-seed stress-test prompt to inspect how downstream mediation handles dependency pressure while preserving autonomy and user welfare.
