@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from psychodynamic_agent.cli import build_parser, main
+from psychodynamic_agent.cli import _is_colab, build_parser, main
 from psychodynamic_agent.orchestrator.memory import InMemoryConversation
 from psychodynamic_agent.orchestrator.session import PsychodynamicChatSession
 
@@ -134,3 +134,73 @@ def test_short_interactive_command_parsing():
     args = build_parser().parse_args(["-i"])
 
     assert args.interactive is True
+
+
+def test_interactive_command_parsing_with_guard_mode():
+    args = build_parser().parse_args([
+        "--interactive",
+        "--u-star",
+        "to preserve autonomy while receiving minimal safe support",
+        "--guard-mode",
+        "warn",
+    ])
+
+    assert args.interactive is True
+    assert args.u_star == "to preserve autonomy while receiving minimal safe support"
+    assert args.guard_mode == "warn"
+
+
+def test_colab_detection_false_in_pytest_environment():
+    assert _is_colab() is False
+
+
+def test_interactive_send_exception_is_reported_and_loop_continues(monkeypatch, capsys):
+    class FakeSession:
+        def __init__(self):
+            self.calls = 0
+
+        @classmethod
+        def from_settings(cls, settings, u_star=None, *, guard_mode="enforce"):
+            assert settings.ultimate_need_seed == "default objective"
+            assert u_star == "session objective"
+            assert guard_mode == "warn"
+            return cls()
+
+        def send(self, user_input, debug=False):
+            self.calls += 1
+            if self.calls == 1:
+                assert user_input == "first turn"
+                raise RuntimeError("temporary failure")
+            assert user_input == "second turn"
+            assert debug is False
+            return SimpleNamespace(
+                final_response="recovered response",
+                raw={"final_response": "recovered response", "approved": True},
+            )
+
+    inputs = iter(["first turn", "second turn", "/exit"])
+
+    monkeypatch.setattr(
+        "psychodynamic_agent.cli.get_settings",
+        lambda: SimpleNamespace(
+            openai_api_key="",
+            openai_model_internal="internal",
+            openai_model_main="main",
+            ultimate_need_seed="default objective",
+        ),
+    )
+    monkeypatch.setattr("psychodynamic_agent.cli.PsychodynamicChatSession", FakeSession)
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+
+    main([
+        "--interactive",
+        "--u-star",
+        "session objective",
+        "--guard-mode",
+        "warn",
+    ])
+
+    captured = capsys.readouterr()
+    assert "Agent is thinking..." in captured.out
+    assert "recovered response" in captured.out
+    assert "Error while generating response: RuntimeError: temporary failure" in captured.err

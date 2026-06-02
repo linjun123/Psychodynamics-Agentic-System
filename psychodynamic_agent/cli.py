@@ -21,6 +21,10 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _is_colab() -> bool:
+    return "google.colab" in sys.modules
+
+
 def _warn_placeholder_u_star(u_star: str) -> None:
     if u_star == PLACEHOLDER_U_STAR:
         print(
@@ -29,18 +33,28 @@ def _warn_placeholder_u_star(u_star: str) -> None:
         )
 
 
-def _print_turn(result, *, debug: bool) -> None:
-    print(result.final_response)
+def _print_turn(result, *, debug: bool, flush: bool = False) -> None:
+    print(result.final_response, flush=flush)
     if result.raw.get("guard_warnings"):
-        print("\n--- GUARD WARNINGS ---")
+        print("\n--- GUARD WARNINGS ---", flush=flush)
         for warning in result.raw["guard_warnings"]:
-            print(f"{warning.get('stage', 'unknown')}: {warning.get('message', '')}")
+            print(
+                f"{warning.get('stage', 'unknown')}: {warning.get('message', '')}",
+                flush=flush,
+            )
     if debug:
-        print("\n--- SAFE DEBUG TRACE ---")
-        print(result.raw.get("safe_debug_trace", {}))
+        print("\n--- SAFE DEBUG TRACE ---", flush=flush)
+        print(result.raw.get("safe_debug_trace", {}), flush=flush)
 
 
 def _run_interactive(args, settings) -> None:
+    if _is_colab():
+        print(
+            "Colab note: for notebook chat, prefer PsychodynamicChatSession directly. "
+            "See docs/COLAB.md.",
+            flush=True,
+        )
+
     u_star = args.u_star
     if u_star is None:
         u_star = input("U* (blank to use settings.ultimate_need_seed): ").strip()
@@ -58,14 +72,24 @@ def _run_interactive(args, settings) -> None:
         try:
             user_input = input("> ").strip()
         except EOFError:
-            print()
+            print(flush=True)
             break
         if user_input in {"/exit", "/quit"}:
             break
         if not user_input:
             continue
-        result = session.send(user_input, debug=args.debug)
-        _print_turn(result, debug=args.debug)
+
+        print("Agent is thinking...", flush=True)
+        try:
+            result = session.send(user_input, debug=args.debug)
+        except Exception as exc:
+            print(
+                f"Error while generating response: {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+            continue
+        _print_turn(result, debug=args.debug, flush=True)
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -213,9 +213,24 @@ safe_debug_trace
 
 Private U*, latent alignment data, private Id payloads, and provider-private internals are intentionally omitted.
 
+
+## Colab
+
+For Colab notebooks, prefer the Python API over `--interactive`. Colab cells are not a normal terminal emulator, so sustained chat is more stable when you create one session object and reuse it across cells.
+
+Minimal Colab path:
+
+1. Install the repo.
+2. Set `OPENAI_API_KEY`.
+3. Create one `PsychodynamicChatSession`.
+4. Call `chat(...)` repeatedly.
+
+See [docs/COLAB.md](docs/COLAB.md) for full copy-paste-ready cells.
+
 ## Documentation
 
 - `docs/ARCHITECTURE.md` — detailed architecture notes.
+- `docs/COLAB.md` — copy-paste-ready Colab setup, chat, and diagnostics cells.
 - `docs/examples/TRACE_CONTRAST_DEMO.md` — same-prompt, two-seed contrast demo showing how public-safe internal traces differ.
 - `docs/history/PHASE_HISTORY.md` — phase-by-phase development history.
 
