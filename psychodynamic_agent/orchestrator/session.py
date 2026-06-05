@@ -36,14 +36,44 @@ class PsychodynamicChatSession:
     ) -> "PsychodynamicChatSession":
         llm = OpenAIResponsesClient(api_key=settings.openai_api_key)
         memory = InMemoryConversation()
-        pipeline = PsychodynamicPipeline(
+        pipeline = cls._build_pipeline(
             llm_client=llm,
+            settings=settings,
+            u_star=u_star,
+            guard_mode=guard_mode,
+        )
+        return cls(llm_client=llm, memory=memory, pipeline=pipeline)
+
+    @staticmethod
+    def _build_pipeline(
+        *,
+        llm_client: OpenAIResponsesClient,
+        settings: Settings,
+        u_star: str | None,
+        guard_mode: GuardMode,
+    ) -> PsychodynamicPipeline:
+        return PsychodynamicPipeline(
+            llm_client=llm_client,
             model_internal=settings.openai_model_internal,
             model_main=settings.openai_model_main,
             sealed_ultimate_need=u_star or settings.ultimate_need_seed,
             guard_mode=guard_mode,
         )
-        return cls(llm_client=llm, memory=memory, pipeline=pipeline)
+
+    def reset_pipeline_preserving_memory(
+        self,
+        settings: Settings,
+        u_star: str | None = None,
+        *,
+        guard_mode: GuardMode = "enforce",
+    ) -> None:
+        """Replace the pipeline without changing recorded public conversation memory."""
+        self.pipeline = self._build_pipeline(
+            llm_client=self.llm_client,
+            settings=settings,
+            u_star=u_star,
+            guard_mode=guard_mode,
+        )
 
     def send(self, user_input: str, debug: bool = False) -> ChatTurnResult:
         state = self.memory.build_state(user_input)

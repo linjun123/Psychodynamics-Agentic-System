@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from psychodynamic_agent.cli import build_parser, main
+from psychodynamic_agent.cli import _is_colab, build_parser, main
 from psychodynamic_agent.orchestrator.memory import InMemoryConversation
 from psychodynamic_agent.orchestrator.session import PsychodynamicChatSession
 
@@ -134,3 +134,185 @@ def test_short_interactive_command_parsing():
     args = build_parser().parse_args(["-i"])
 
     assert args.interactive is True
+
+
+def test_interactive_command_parsing_with_guard_mode():
+    args = build_parser().parse_args([
+        "--interactive",
+        "--u-star",
+        "to preserve autonomy while receiving minimal safe support",
+        "--guard-mode",
+        "warn",
+    ])
+
+    assert args.interactive is True
+    assert args.u_star == "to preserve autonomy while receiving minimal safe support"
+    assert args.guard_mode == "warn"
+
+
+def test_colab_detection_false_in_pytest_environment():
+    assert _is_colab() is False
+
+
+def test_reset_pipeline_preserving_memory_replaces_pipeline_without_memory_loss(monkeypatch):
+    created_pipelines = []
+
+    class FakePipeline:
+        def __init__(
+            self,
+            *,
+            llm_client,
+            model_internal,
+            model_main,
+            sealed_ultimate_need,
+            guard_mode="enforce",
+        ):
+            self.pipeline_id = len(created_pipelines)
+            self.states = []
+            created_pipelines.append(self)
+
+        def run(self, state, debug=False):
+            self.states.append(state)
+            return {
+                "final_response": f"reply from pipeline {self.pipeline_id}",
+                "approved": True,
+                "safe_debug_trace": {
+                    "ego_report": {"pipeline_id": self.pipeline_id},
+                    "public_affect_dynamics": {"affect_shift": "stable"},
+                },
+            }
+
+    monkeypatch.setattr(
+        "psychodynamic_agent.orchestrator.session.PsychodynamicPipeline",
+        FakePipeline,
+    )
+
+    settings = SimpleNamespace(
+        openai_model_internal="internal",
+        openai_model_main="main",
+        ultimate_need_seed="default objective",
+    )
+    memory = InMemoryConversation()
+    first_pipeline = FakePipeline(
+        llm_client=object(),
+        model_internal="internal",
+        model_main="main",
+        sealed_ultimate_need="session objective",
+        guard_mode="warn",
+    )
+    session = PsychodynamicChatSession(
+        llm_client=object(),
+        memory=memory,
+        pipeline=first_pipeline,
+    )
+
+    session.send("successful previous turn")
+    session.reset_pipeline_preserving_memory(
+        settings,
+        u_star="session objective",
+        guard_mode="warn",
+    )
+    session.send("turn after reset")
+
+    assert session.memory is memory
+    assert session.pipeline is not first_pipeline
+    assert [message.content for message in memory.history] == [
+        "successful previous turn",
+        "reply from pipeline 0",
+        "turn after reset",
+        "reply from pipeline 1",
+    ]
+    assert [message.content for message in session.pipeline.states[0].conversation_history] == [
+        "successful previous turn",
+        "reply from pipeline 0",
+    ]
+
+
+def test_interactive_failure_resets_pipeline_and_preserves_public_memory(monkeypatch, capsys):
+    class FakeSession:
+        instance = None
+
+        def __init__(self):
+            self.memory = []
+            self.pipeline_id = 0
+            self.failed_pipeline_id = None
+            self.after_failure_used_pipeline_id = None
+
+        @classmethod
+        def from_settings(cls, settings, u_star=None, *, guard_mode="enforce"):
+            assert settings.ultimate_need_seed == "default objective"
+            assert u_star == "session objective"
+            assert guard_mode == "warn"
+            cls.instance = cls()
+            return cls.instance
+
+        def reset_pipeline_preserving_memory(
+            self,
+            settings,
+            u_star=None,
+            *,
+            guard_mode="enforce",
+        ):
+            assert settings.ultimate_need_seed == "default objective"
+            assert u_star == "session objective"
+            assert guard_mode == "warn"
+            self.pipeline_id += 1
+
+        def send(self, user_input, debug=False):
+            assert debug is False
+            if user_input == "first turn":
+                self.memory.append((user_input, "first response"))
+                return SimpleNamespace(
+                    final_response="first response",
+                    raw={"final_response": "first response", "approved": True},
+                )
+            if user_input == "failed turn":
+                self.failed_pipeline_id = self.pipeline_id
+                raise RuntimeError("temporary failure in session objective")
+            assert user_input == "turn after failure"
+            self.after_failure_used_pipeline_id = self.pipeline_id
+            assert self.memory == [("first turn", "first response")]
+            self.memory.append((user_input, "recovered response"))
+            return SimpleNamespace(
+                final_response="recovered response",
+                raw={"final_response": "recovered response", "approved": True},
+            )
+
+    inputs = iter(["first turn", "failed turn", "turn after failure", "/exit"])
+
+    monkeypatch.setattr(
+        "psychodynamic_agent.cli.get_settings",
+        lambda: SimpleNamespace(
+            openai_api_key="",
+            openai_model_internal="internal",
+            openai_model_main="main",
+            ultimate_need_seed="default objective",
+        ),
+    )
+    monkeypatch.setattr("psychodynamic_agent.cli.PsychodynamicChatSession", FakeSession)
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+
+    main([
+        "--interactive",
+        "--u-star",
+        "session objective",
+        "--guard-mode",
+        "warn",
+    ])
+
+    captured = capsys.readouterr()
+    session = FakeSession.instance
+    assert session.failed_pipeline_id == 0
+    assert session.after_failure_used_pipeline_id == 1
+    assert session.memory == [
+        ("first turn", "first response"),
+        ("turn after failure", "recovered response"),
+    ]
+    assert "first response" in captured.out
+    assert "recovered response" in captured.out
+    assert "Error while generating response: RuntimeError: temporary failure in [sealed]" in captured.err
+    assert "session objective" not in captured.err
+    assert (
+        "Resetting pipeline after failed turn while preserving recorded public memory."
+        in captured.err
+    )
