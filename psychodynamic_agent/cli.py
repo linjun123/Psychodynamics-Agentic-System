@@ -25,6 +25,13 @@ def _is_colab() -> bool:
     return "google.colab" in sys.modules
 
 
+def _safe_cli_error_message(exc: Exception, *, u_star: str | None) -> str:
+    message = str(exc)
+    if u_star:
+        message = message.replace(u_star, "[sealed]")
+    return message[:500]
+
+
 def _warn_placeholder_u_star(u_star: str) -> None:
     if u_star == PLACEHOLDER_U_STAR:
         print(
@@ -83,10 +90,21 @@ def _run_interactive(args, settings) -> None:
         try:
             result = session.send(user_input, debug=args.debug)
         except Exception as exc:
+            safe_message = _safe_cli_error_message(exc, u_star=u_star)
             print(
-                f"Error while generating response: {type(exc).__name__}: {exc}",
+                f"Error while generating response: {type(exc).__name__}: {safe_message}",
                 file=sys.stderr,
                 flush=True,
+            )
+            print(
+                "Resetting pipeline after failed turn while preserving recorded public memory.",
+                file=sys.stderr,
+                flush=True,
+            )
+            session.reset_pipeline_preserving_memory(
+                settings,
+                u_star=u_star,
+                guard_mode=args.guard_mode,
             )
             continue
         _print_turn(result, debug=args.debug, flush=True)
