@@ -31,6 +31,27 @@ class ArgmaxSampler:
         return max(range(len(logits)), key=lambda idx: logits[idx])
 
 
+class FakeTokenizer:
+    def __init__(self, token_text: dict[int, str]):
+        self.token_text = token_text
+
+    def decode(self, token_ids: Sequence[int]) -> str:
+        return " ".join(self.token_text[token_id] for token_id in token_ids)
+
+
+class RecordingAdapter:
+    def __init__(self):
+        self.runtime_state: GenerationRuntimeState | None = None
+        self.decoding_states: list[DecodingState] = []
+
+    def prepare(self, runtime_state: GenerationRuntimeState) -> None:
+        self.runtime_state = runtime_state
+
+    def adjust_logits(self, logits: list[float], decoding_state: DecodingState) -> list[float]:
+        self.decoding_states.append(decoding_state)
+        return logits
+
+
 class BiasTokenAdapter:
     def __init__(self, token_id: int, bias: float):
         self.token_id = token_id
@@ -133,3 +154,40 @@ def test_multiple_adapters_apply_in_supplied_order() -> None:
 
     assert calls == ["add", "multiply"]
     assert adjusted == [6.0]
+
+
+def test_recording_adapter_sees_evolving_decoding_state() -> None:
+    adapter = RecordingAdapter()
+    tokenizer = FakeTokenizer({1: "one", 2: "two"})
+    model = FakeModel(logits_by_step=[[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
+    sampler = ArgmaxSampler()
+
+    generated = generate_tokens(
+        model=model,
+        sampler=sampler,
+        input_ids=[42],
+        config=GenerationConfig(
+            max_new_tokens=3,
+            model_name="test-model",
+            logit_adapters=[adapter],
+        ),
+        tokenizer=tokenizer,
+        prompt_text="prompt text",
+    )
+
+    assert generated == [1, 2, 0]
+    assert adapter.runtime_state is not None
+    assert adapter.runtime_state.prompt_text == "prompt text"
+    assert adapter.runtime_state.model_name == "test-model"
+    assert [state.step_index for state in adapter.decoding_states] == [0, 1, 2]
+    assert [tuple(state.generated_ids) for state in adapter.decoding_states] == [(), (1,), (1, 2)]
+    assert [state.prompt_text for state in adapter.decoding_states] == [
+        "prompt text",
+        "prompt text",
+        "prompt text",
+    ]
+    assert [state.generated_prefix_text for state in adapter.decoding_states] == [
+        "",
+        "one",
+        "one two",
+    ]

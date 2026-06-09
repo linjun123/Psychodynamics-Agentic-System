@@ -29,12 +29,18 @@ class GenerationRuntimeState:
 
 @dataclass(frozen=True)
 class DecodingState:
-    """Per-step context passed to logit adapters during token decoding."""
+    """Per-step context passed to logit adapters during token decoding.
+
+    ``prompt_text`` is the original prompt when available.
+    ``generated_prefix_text`` is decoded from the current ``generated_ids`` when
+    a tokenizer is available, so it evolves as generation proceeds.
+    """
 
     step_index: int
     input_ids: Sequence[int]
     generated_ids: Sequence[int]
-    prefix_text: str | None = None
+    prompt_text: str | None = None
+    generated_prefix_text: str | None = None
     tokenizer: Any | None = None
     sampling_config: Mapping[str, Any] | None = None
     metadata: Mapping[str, Any] | None = None

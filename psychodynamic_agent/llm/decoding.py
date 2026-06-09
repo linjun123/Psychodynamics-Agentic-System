@@ -36,8 +36,17 @@ class GenerationConfig:
     max_new_tokens: int
     eos_token_id: int | None = None
     sampling_config: Mapping[str, Any] | None = None
+    model_name: str | None = None
     logit_adapters: Sequence[LogitAdapter] | None = None
     metadata: Mapping[str, Any] | None = None
+
+
+def _generated_prefix_text(tokenizer: Any | None, generated_ids: Sequence[int]) -> str | None:
+    """Decode generated token IDs into prefix text when a tokenizer is available."""
+
+    if tokenizer is None:
+        return None
+    return tokenizer.decode(generated_ids)
 
 
 def generate_tokens(
@@ -59,6 +68,7 @@ def generate_tokens(
     runtime_state = GenerationRuntimeState(
         input_ids=input_ids,
         prompt_text=prompt_text,
+        model_name=config.model_name,
         tokenizer=tokenizer,
         sampling_config=config.sampling_config,
         metadata=config.metadata,
@@ -71,7 +81,8 @@ def generate_tokens(
             step_index=step_index,
             input_ids=input_ids,
             generated_ids=tuple(generated_ids),
-            prefix_text=prompt_text,
+            prompt_text=prompt_text,
+            generated_prefix_text=_generated_prefix_text(tokenizer, generated_ids),
             tokenizer=tokenizer,
             sampling_config=config.sampling_config,
             metadata=config.metadata,

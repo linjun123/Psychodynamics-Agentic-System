@@ -153,8 +153,10 @@ The pipeline now emits a structured `psychodynamic_trace` object under `safe_deb
 Decoders that expose token logits can register optional `LogitAdapter` implementations in their
 `GenerationConfig`. The hook is intentionally generic: adapters receive lightweight runtime and
 per-step decoding state, run after base model logits are produced, and return the logits that the
-sampler should use for the next token. When no adapters are configured, logits flow directly from
-the model to the sampler and default behavior is unchanged.
+sampler should use for the next token. Per-step state keeps the original prompt separate from
+the generated prefix decoded from generated token IDs when a tokenizer is available. When no
+adapters are configured, logits flow directly from the model to the sampler and default behavior
+is unchanged.
 
 Future psychodynamic decoding modules, including parapraxis or conflictual-token mechanisms,
 should use this hook rather than importing specialized logic into core generation code.
