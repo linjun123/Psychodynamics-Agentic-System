@@ -3,12 +3,18 @@ from psychodynamic_agent.memory.association_scoring import (
     score_trace_association,
 )
 from psychodynamic_agent.memory.associator import MemoryAssociator
+from psychodynamic_agent.memory.conscious_projection import build_conscious_memory_view
 from psychodynamic_agent.memory.debug import (
     MemoryDebugRuntimeConfig,
     build_private_memory_debug_trace_if_allowed,
     build_safe_memory_debug_summary,
     private_memory_debug_enabled,
     safe_memory_debug_enabled,
+)
+from psychodynamic_agent.memory.defense_gate import MemoryDefenseGate
+from psychodynamic_agent.memory.defense_policy import (
+    choose_defensive_access,
+    defense_pressure_score,
 )
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
 from psychodynamic_agent.memory.output_guard import (
@@ -22,6 +28,10 @@ __all__ = [
     "HeuristicMemoryExtractor",
     "MemoryAssociator",
     "PsychoanalyticMemoryStore",
+    "MemoryDefenseGate",
+    "build_conscious_memory_view",
+    "choose_defensive_access",
+    "defense_pressure_score",
     "build_memory_retrieval_query",
     "score_trace_association",
     "build_memory_activation",

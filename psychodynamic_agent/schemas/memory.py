@@ -55,6 +55,14 @@ MemoryAccessMode = Literal[
     "blocked_action_only",
 ]
 
+MemoryDefenseAccess = Literal[
+    "direct",
+    "screened",
+    "felt_sense_only",
+    "blocked_action_only",
+]
+
+
 MemoryMechanism = Literal[
     "direct",
     "screen_memory",
@@ -106,6 +114,21 @@ class MemoryActivation(StrictSchemaModel):
 class MemoryRetrievalResult(StrictSchemaModel):
     query: MemoryRetrievalQuery
     activations: list[MemoryActivation] = Field(default_factory=list)
+
+
+class MemoryDefenseDecision(StrictSchemaModel):
+    trace_id: str
+    activation_rank: int = Field(ge=1)
+    association_score: float = Field(ge=0.0, le=1.0)
+    original_accessibility: MemoryAccessMode
+    decided_accessibility: MemoryAccessMode
+    defense_level: float = Field(ge=0.0, le=1.0)
+    repression_pressure: float = Field(ge=0.0, le=1.0)
+    defense_pressure: float = Field(ge=0.0, le=1.0)
+    conscious_access: MemoryDefenseAccess
+    mechanism: MemoryMechanism
+    emits_conscious_cue: bool
+    public_reason: str
 
 
 class MemoryTrace(StrictSchemaModel):
@@ -202,6 +225,12 @@ class MemoryTransformationRecord(StrictSchemaModel):
     guard_result: Literal["passed", "repaired", "blocked"] = "passed"
 
 
+class MemoryProjectionResult(StrictSchemaModel):
+    conscious_memory_view: ConsciousMemoryView
+    defense_decisions: list[MemoryDefenseDecision] = Field(default_factory=list)
+    transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
+
+
 class SafeMemoryDebugSummary(StrictSchemaModel):
     activated_trace_count: int = Field(default=0, ge=0)
     activated_complex_count: int = Field(default=0, ge=0)
@@ -217,6 +246,7 @@ class PrivateMemoryDebugTrace(StrictSchemaModel):
     current_turn_summary: str | None = None
     retrieved_traces: list[MemoryTrace] = Field(default_factory=list)
     retrieval_activations: list[MemoryActivation] = Field(default_factory=list)
+    defense_decisions: list[MemoryDefenseDecision] = Field(default_factory=list)
     transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
     active_complexes: list[ComplexNode] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)

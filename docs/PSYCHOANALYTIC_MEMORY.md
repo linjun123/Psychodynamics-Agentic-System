@@ -120,3 +120,33 @@ screen memory, condensation, displacement, deferred action, repetition-bias
 generation, complex clustering, LLM interpretation, API calls, or persistent
 storage. Retrieval is read-only: it does not increment `activation_count` or
 change stored `MemoryTrace` records.
+
+## PR4: Defensive memory gate and conscious memory projection
+
+PR4 adds a deterministic, store-level `MemoryDefenseGate` and
+`ConsciousMemoryView` projection layer for retrieved private memory activations.
+Retrieved `MemoryActivation` records are matched back to their private
+`MemoryTrace` records, passed through a defensive access policy, and converted
+into conscious-compatible cues only when the policy allows a cue to be emitted.
+
+Defensive forgetting is modeled as access gating, not deletion. Private
+`MemoryTrace` records remain stored privately even when defense or repression
+pressure prevents them from entering the conscious view directly.
+
+The PR4 access modes are intentionally minimal:
+
+- Direct traces can become `direct_memory` conscious cues using sanitized public
+  surface summaries.
+- Screened traces can become symbolic `screen_memory` cues that avoid private
+  core summaries and direct event detail.
+- Felt-sense-only traces can become generic diffuse affective cues rather than
+  factual recall.
+- Blocked-action-only traces remain private and emit no conscious cue, while the
+  private debug projection records the defensive block.
+
+`ConsciousMemoryView` remains private/store-level only in this PR. It is not
+added to `FullInternalState`, passed to Ego/MainAI, wired into the runtime
+pipeline, or used to change final responses. This PR also does not add a full
+memory distortion engine, repetition-bias generation, complex clustering,
+condensation, displacement, deferred action, LLM memory interpretation, API
+calls, or persistent storage.
