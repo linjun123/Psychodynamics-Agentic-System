@@ -20,6 +20,23 @@ from .id import (
     PublicAffectDynamicsSummary,
 )
 from .main_ai import MainAIConstraint, MainAIOutput, MainAIResponsePlan
+from .memory import (
+    AffectiveSignature,
+    ComplexNode,
+    ConsciousMemoryCue,
+    ConsciousMemoryView,
+    DesireSignature,
+    MemoryAccessMode,
+    MemoryDebugConfig,
+    MemoryDebugMode,
+    MemoryMechanism,
+    MemoryTrace,
+    MemoryTransformationRecord,
+    PrivateMemoryDebugTrace,
+    RepetitionBias,
+    SafeMemoryDebugSummary,
+    ThreatSignature,
+)
 from .safety import SafetyGateOutput
 from .state import FullInternalState, Message
 from .surface_affect import SurfaceAffectProfile, SurfaceAffectStyle
@@ -51,5 +68,20 @@ __all__ = [
     "MainAIConstraint",
     "MainAIResponsePlan",
     "MainAIOutput",
+    "AffectiveSignature",
+    "DesireSignature",
+    "ThreatSignature",
+    "MemoryDebugMode",
+    "MemoryDebugConfig",
+    "MemoryAccessMode",
+    "MemoryMechanism",
+    "MemoryTrace",
+    "ConsciousMemoryCue",
+    "ConsciousMemoryView",
+    "RepetitionBias",
+    "ComplexNode",
+    "MemoryTransformationRecord",
+    "SafeMemoryDebugSummary",
+    "PrivateMemoryDebugTrace",
     "SafetyGateOutput",
 ]
