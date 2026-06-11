@@ -46,14 +46,24 @@ def _threat(humiliation: float = 0.0) -> ThreatSignature:
     )
 
 
-def _query() -> MemoryRetrievalQuery:
+def _query(
+    *,
+    shame: float = 0.8,
+    recognition: float = 0.8,
+    humiliation: float = 0.8,
+    object_targets: list[str] | None = None,
+    salient_symbols: list[str] | None = None,
+    query_summary: str = "boss feedback",
+) -> MemoryRetrievalQuery:
     return MemoryRetrievalQuery(
-        affective_signature=_affective(0.8),
-        desire_signature=_desire(0.8),
-        threat_signature=_threat(0.8),
-        object_targets=["boss"],
-        salient_symbols=["evaluation_sensitivity"],
-        query_summary="boss feedback",
+        affective_signature=_affective(shame),
+        desire_signature=_desire(recognition),
+        threat_signature=_threat(humiliation),
+        object_targets=["boss"] if object_targets is None else object_targets,
+        salient_symbols=(
+            ["evaluation_sensitivity"] if salient_symbols is None else salient_symbols
+        ),
+        query_summary=query_summary,
     )
 
 
@@ -68,17 +78,22 @@ def _trace(
     repression_pressure: float = 0.1,
     accessibility: str = "direct",
     activation_count: int = 1,
+    surface_event_summary: str = "boss feedback",
+    object_targets: list[str] | None = None,
+    salient_symbols: list[str] | None = None,
 ) -> MemoryTrace:
     return MemoryTrace(
         trace_id=trace_id,
         created_turn=created_turn,
-        surface_event_summary="boss feedback",
+        surface_event_summary=surface_event_summary,
         private_core_summary="private",
         affective_signature=_affective(shame),
         desire_signature=_desire(recognition),
         threat_signature=_threat(humiliation),
-        object_targets=["boss"],
-        salient_symbols=["evaluation_sensitivity"],
+        object_targets=["boss"] if object_targets is None else object_targets,
+        salient_symbols=(
+            ["evaluation_sensitivity"] if salient_symbols is None else salient_symbols
+        ),
         defense_level=defense_level,
         repression_pressure=repression_pressure,
         accessibility=accessibility,  # type: ignore[arg-type]
@@ -155,3 +170,35 @@ def test_tie_breaking_is_stable() -> None:
     )
 
     assert [activation.trace_id for activation in activations] == ["a", "b", "c"]
+
+
+def test_neutral_unrelated_traces_have_low_scores_and_can_be_filtered() -> None:
+    query = _query(
+        shame=0.0,
+        recognition=0.0,
+        humiliation=0.0,
+        object_targets=[],
+        salient_symbols=[],
+        query_summary="ordinary message",
+    )
+    traces = [
+        _trace(
+            "neutral-a",
+            surface_event_summary="unrelated ordinary text",
+            object_targets=[],
+            salient_symbols=[],
+        ),
+        _trace(
+            "neutral-b",
+            surface_event_summary="another low signal note",
+            object_targets=[],
+            salient_symbols=[],
+        ),
+    ]
+
+    activations = MemoryAssociator().retrieve(query=query, traces=traces, min_score=0.0)
+    filtered = MemoryAssociator().retrieve(query=query, traces=traces, min_score=0.1)
+
+    assert activations
+    assert all(activation.association_score <= 0.05 for activation in activations)
+    assert filtered == []

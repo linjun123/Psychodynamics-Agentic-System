@@ -59,3 +59,39 @@ def test_repetition_frequency_score_clamps() -> None:
 def test_defense_barrier_score_uses_max_defense_or_repression() -> None:
     assert defense_barrier_score(0.2, 0.7) == 0.7
     assert defense_barrier_score(1.2, 0.1) == 1.0
+
+
+def test_signature_similarity_ignores_mutually_absent_dimensions() -> None:
+    assert signature_similarity(_affective(), _affective()) == 0.0
+
+
+def test_signature_similarity_scores_active_matching_dimensions() -> None:
+    similarity = signature_similarity(
+        _affective(shame=0.8, fear_of_loss=0.7),
+        _affective(shame=0.8, fear_of_loss=0.7),
+    )
+
+    assert similarity > 0.85
+
+
+def test_signature_similarity_scores_active_mismatch_low() -> None:
+    similarity = signature_similarity(
+        _affective(shame=1.0, fear_of_loss=1.0),
+        _affective(),
+    )
+
+    assert similarity < 0.4
+
+
+def test_signature_similarity_handles_valence_baseline() -> None:
+    neutral_valence_only = signature_similarity(
+        _affective(valence=0.5),
+        _affective(valence=0.5),
+    )
+    shifted_valence = signature_similarity(
+        _affective(valence=0.1),
+        _affective(valence=0.2),
+    )
+
+    assert neutral_valence_only == 0.0
+    assert shifted_valence > 0.85

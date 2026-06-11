@@ -125,10 +125,55 @@ def test_affect_desire_threat_similarity_can_outrank_fact_similarity() -> None:
     assert affect_score > fact_score
 
 
+def test_neutral_unrelated_traces_do_not_receive_high_association_score() -> None:
+    query = _query(
+        affective_signature=_affective(),
+        desire_signature=_desire(),
+        threat_signature=_threat(),
+        object_targets=[],
+        salient_symbols=[],
+        query_summary="ordinary message",
+    )
+    trace = _trace(
+        surface_event_summary="unrelated ordinary text",
+        affective_signature=_affective(),
+        desire_signature=_desire(),
+        threat_signature=_threat(),
+        object_targets=[],
+        salient_symbols=[],
+        defense_level=0.2,
+        repression_pressure=0.1,
+        activation_count=1,
+    )
+
+    components = score_trace_association(query=query, trace=trace)
+
+    assert components.affect_similarity == 0.0
+    assert components.desire_similarity == 0.0
+    assert components.threat_similarity == 0.0
+    assert components.final_score <= 0.05
+
+
 def test_defense_barrier_lowers_final_score() -> None:
-    query = _query()
-    low_defense = _trace(defense_level=0.1, repression_pressure=0.1)
-    high_defense = _trace(defense_level=0.9, repression_pressure=0.8)
+    query = _query(
+        affective_signature=_affective(shame=0.8),
+        desire_signature=_desire(recognition=0.8),
+        threat_signature=_threat(humiliation=0.8),
+    )
+    low_defense = _trace(
+        affective_signature=_affective(shame=0.8),
+        desire_signature=_desire(recognition=0.8),
+        threat_signature=_threat(humiliation=0.8),
+        defense_level=0.1,
+        repression_pressure=0.1,
+    )
+    high_defense = _trace(
+        affective_signature=_affective(shame=0.8),
+        desire_signature=_desire(recognition=0.8),
+        threat_signature=_threat(humiliation=0.8),
+        defense_level=0.9,
+        repression_pressure=0.8,
+    )
 
     low_score = score_trace_association(query=query, trace=low_defense).final_score
     high_score = score_trace_association(query=query, trace=high_defense).final_score

@@ -12,19 +12,51 @@ def scalar_similarity(a: float, b: float) -> float:
     return clamp_01(1.0 - abs(float(a) - float(b)))
 
 
+_ACTIVE_DIMENSION_THRESHOLD = 0.05
+
+
+def _field_baseline(field_name: str) -> float:
+    if field_name == "valence":
+        return 0.5
+    if field_name == "arousal":
+        return 0.3
+    return 0.0
+
+
+def _dimension_activation_weight(
+    field_name: str,
+    left_value: float,
+    right_value: float,
+) -> float:
+    baseline = _field_baseline(field_name)
+    max_distance = max(baseline, 1.0 - baseline)
+    if max_distance <= 0.0:
+        return 0.0
+    activation_distance = max(abs(left_value - baseline), abs(right_value - baseline))
+    return clamp_01(activation_distance / max_distance)
+
+
 def signature_similarity(left: StrictSchemaModel, right: StrictSchemaModel) -> float:
     left_data = left.model_dump()
     right_data = right.model_dump()
     common_keys = sorted(set(left_data) & set(right_data))
-    similarities: list[float] = []
+    weighted_similarity_sum = 0.0
+    weight_sum = 0.0
     for key in common_keys:
         left_value = left_data[key]
         right_value = right_data[key]
-        if isinstance(left_value, Number) and isinstance(right_value, Number):
-            similarities.append(scalar_similarity(float(left_value), float(right_value)))
-    if not similarities:
+        if not isinstance(left_value, Number) or not isinstance(right_value, Number):
+            continue
+        left_number = float(left_value)
+        right_number = float(right_value)
+        weight = _dimension_activation_weight(key, left_number, right_number)
+        if weight < _ACTIVE_DIMENSION_THRESHOLD:
+            continue
+        weighted_similarity_sum += weight * scalar_similarity(left_number, right_number)
+        weight_sum += weight
+    if weight_sum == 0.0:
         return 0.0
-    return clamp_01(sum(similarities) / len(similarities))
+    return clamp_01(weighted_similarity_sum / weight_sum)
 
 
 def _normalized_set(values: list[str]) -> set[str]:
