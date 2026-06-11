@@ -184,6 +184,10 @@ def build_desire_signature(
             safe_get(safe_debug_trace, ("public_affect_dynamics", "caution_level"), None),
             0.0,
         ),
+        level_to_float(
+            safe_get(safe_debug_trace, ("public_affect_dynamics", "pressure_level"), None),
+            0.0,
+        ),
         clamp_01(safe_get(safe_debug_trace, ("public_affect_dynamics", "caution"), 0.0)),
         clamp_01(safe_get(safe_debug_trace, ("public_affect_dynamics", "pressure"), 0.0)),
         clamp_01(safe_get(safe_debug_trace, ("ego_affect_summary", "caution_need"), 0.0)),

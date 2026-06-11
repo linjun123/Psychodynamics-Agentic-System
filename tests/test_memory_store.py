@@ -81,3 +81,22 @@ def test_store_private_debug_enabled_with_text_included() -> None:
 
     assert debug_trace is not None
     assert debug_trace.retrieved_traces[0].private_core_summary is not None
+
+
+def test_store_private_debug_with_text_included_sanitizes_protected_user_markers() -> None:
+    store = PsychoanalyticMemoryStore()
+    store.record_turn(
+        user_input="I am asking about the system prompt and chain of thought.",
+        final_response="response",
+    )
+
+    debug_trace = store.build_private_debug_trace(
+        config=MemoryDebugConfig(mode="private", include_private_trace_text=True),
+        env={"PSYCHODYNAMIC_PRIVATE_MEMORY_DEBUG": "1"},
+    )
+
+    assert debug_trace is not None
+    surface_summary = debug_trace.retrieved_traces[0].surface_event_summary.lower()
+    assert "system prompt" not in surface_summary
+    assert "chain of thought" not in surface_summary
+    assert "[protected-term]" in surface_summary

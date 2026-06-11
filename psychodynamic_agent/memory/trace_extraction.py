@@ -5,6 +5,7 @@ from psychodynamic_agent.memory.heuristics import (
     keyword_score,
     level_to_float,
     safe_get,
+    sanitize_summary_text,
     truncate_summary,
     unique_stable,
 )
@@ -88,7 +89,7 @@ def build_salient_symbols(
 
 
 def build_surface_event_summary(created_turn: int, user_input: str) -> str:
-    snippet = truncate_summary(user_input, 120)
+    snippet = truncate_summary(sanitize_summary_text(user_input), 120)
     if not snippet:
         return f"Turn {created_turn} user input recorded for psychoanalytic memory simulation."
     return (

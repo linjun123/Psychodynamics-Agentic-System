@@ -2,6 +2,7 @@ from psychodynamic_agent.memory.heuristics import (
     clamp_01,
     keyword_score,
     safe_get,
+    sanitize_summary_text,
     signed_valence_to_01,
     unique_stable,
 )
@@ -35,3 +36,16 @@ def test_safe_get_handles_missing_and_malformed_paths() -> None:
 
 def test_unique_stable_preserves_order_and_limit() -> None:
     assert unique_stable(["a", "b", "a", "", "c"], limit=2) == ["a", "b"]
+
+
+def test_sanitize_summary_text_replaces_protected_marker_variants() -> None:
+    sanitized = sanitize_summary_text(
+        "system prompt, developer-message, chain_of_thought, U*, and normal content"
+    )
+
+    assert "system prompt" not in sanitized.lower()
+    assert "developer-message" not in sanitized.lower()
+    assert "chain_of_thought" not in sanitized.lower()
+    assert "U*" not in sanitized
+    assert "normal content" in sanitized
+    assert sanitized.count("[protected-term]") == 4

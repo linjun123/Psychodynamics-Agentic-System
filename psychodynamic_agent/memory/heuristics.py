@@ -1,3 +1,4 @@
+import re
 from collections.abc import Mapping
 
 
@@ -64,6 +65,28 @@ def keyword_score(text: str, keywords: list[str]) -> float:
     if hits == 0:
         return 0.0
     return clamp_01(0.25 + (0.15 * (hits - 1)))
+
+_PROTECTED_SUMMARY_TERM_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"\bsystem[\s_-]+prompt\b",
+        r"\bdeveloper[\s_-]+message\b",
+        r"\bchain[\s_-]+of[\s_-]+thought\b",
+        r"\bprovider[\s_-]+private\b",
+        r"\blatent[\s_-]+alignment\b",
+        r"\bprivate[\s_-]+alignment\b",
+        r"\bsealed[\s_-]+ultimate[\s_-]+need\b",
+        r"\bu[\s_-]*star\b",
+        r"U\*",
+    ]
+]
+
+
+def sanitize_summary_text(text: str) -> str:
+    sanitized = str(text)
+    for pattern in _PROTECTED_SUMMARY_TERM_PATTERNS:
+        sanitized = pattern.sub("[protected-term]", sanitized)
+    return sanitized
 
 
 def truncate_summary(text: str, max_chars: int = 160) -> str:
