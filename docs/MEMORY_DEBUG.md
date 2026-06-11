@@ -77,3 +77,24 @@ private debug guard allows the payload. By default this requires
 Safe summaries and private traces remain separate. Safe output is suitable only
 for public mechanism-level observability; private debug output is developer-only
 and must continue to pass the stricter protected-content guard.
+
+## PR3 retrieval activation debug output
+
+PR3 allows developer-only private memory debug traces to include
+`retrieval_activations` after store-level association retrieval has been run.
+Each activation contains public-safe score metadata: trace ID, rank,
+association score, component breakdowns, accessibility mode, matched public
+object/symbol labels, and a compact public reason. It does not contain
+`private_core_summary` or raw private trace text.
+
+Safe debug remains public-safe. `SafeMemoryDebugSummary` may note that
+association retrieval exists for private inspection, but it must not include
+retrieval activation payloads, private trace text, private summaries, sealed
+U*, latent/private alignment content, provider-private internals, system or
+developer messages, or chain-of-thought-like text.
+
+Private debug remains explicitly gated by `MemoryDebugConfig` and, by default,
+`PSYCHODYNAMIC_PRIVATE_MEMORY_DEBUG=1`. When
+`include_private_trace_text=False`, retrieved `MemoryTrace.private_core_summary`
+continues to be redacted while retrieval activation score breakdowns are
+preserved for developer inspection.
