@@ -98,3 +98,30 @@ Private debug remains explicitly gated by `MemoryDebugConfig` and, by default,
 `include_private_trace_text=False`, retrieved `MemoryTrace.private_core_summary`
 continues to be redacted while retrieval activation score breakdowns are
 preserved for developer inspection.
+
+## PR4 defensive projection debug output
+
+PR4 allows developer-only private memory debug traces to include defensive
+projection artifacts after `project_conscious_view_for_turn` has been run:
+
+- `defense_decisions` records the public-safe access decision for each retrieved
+  activation, including mechanism, pressure, and a short public reason.
+- `transformation_chain` records how each private trace activation became a
+  direct cue, screened cue, felt-sense cue, or blocked cue.
+- `conscious_memory_view` contains conscious-compatible public cues and pressure
+  metadata.
+
+Safe debug remains public-safe and mechanism-level only. It may mention that
+private defensive projection is available for inspection, but it must not expose
+private trace text, private transformation input summaries, defense decision
+payloads, or transformation-chain private text.
+
+When `include_private_trace_text=False`, private debug redaction removes both
+`MemoryTrace.private_core_summary` and
+`MemoryTransformationRecord.private_input_summary`. Retrieval activations,
+defense decisions, and the conscious memory view are preserved because their
+stored fields are public-safe. Defense decisions use public-safe reasons only.
+
+`ConsciousMemoryView` is conscious-compatible, but it is not runtime-wired in
+PR4. It is not passed to Ego/MainAI/SafetyGate and does not alter final
+responses.
