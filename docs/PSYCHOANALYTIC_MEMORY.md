@@ -73,3 +73,29 @@ text.
 - `PrivateMemoryDebugTrace` is developer-only and must be explicitly enabled.
 - Future LLM-based memory operations may generate drafts, but deterministic code
   must own schema validation, boundary decisions, and guards.
+
+## PR2: MemoryStore and heuristic trace extraction
+
+PR2 adds a non-persistent `PsychoanalyticMemoryStore` and a deterministic
+`HeuristicMemoryExtractor`. After each completed in-memory conversation turn, the
+store can record a private `MemoryTrace` with a local ID such as `mem_000001`,
+turn metadata, safe surface summary, private simulation summary,
+affective/desire/threat signatures, object targets, symbolic labels, defense and
+repression pressure, accessibility, and activation metadata.
+
+The extraction path is heuristic-only in PR2. It uses the user turn text and
+public-safe debug artifacts when available, such as raw affect, affect traces,
+object cathexis, public affect dynamics, and ego affect summaries. It does not
+call an LLM or OpenAI API, does not inspect sealed U*, latent/private alignment,
+system prompts, provider-private internals, or chain-of-thought, and falls back
+to neutral deterministic signatures when debug data is missing or malformed.
+
+PR2 still does not perform retrieval, association ranking, defense gating,
+distortion, repetition, complex clustering, screen memory, condensation,
+displacement, deferred action, or runtime response influence. It only records
+private traces for later phases to use.
+
+`MemoryTrace` remains private to the memory store. It is not added to
+`FullInternalState`, conversation history, previous Ego reports, previous MainAI
+outputs, satisfaction history, safe debug traces, or final responses. Future LLM
+memory interpretation remains out of scope for this PR.

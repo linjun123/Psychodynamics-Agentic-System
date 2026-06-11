@@ -52,3 +52,28 @@ content. Private memory debug is developer-only observability for future memory
 internals and may include private trace fields, so it requires explicit gating
 and a stricter guard against sealed U*, latent/private alignment,
 provider-private internals, prompts, and chain-of-thought-like text.
+
+## PR2 memory store debug output
+
+PR2 allows `PsychoanalyticMemoryStore` to build memory debug artifacts through
+`MemoryDebugConfig`. The normal safe summary remains mechanism-level and
+public-safe: it can include trace counts, public symbolic labels, active public
+mechanisms, pressure numbers, and public notes, but it must not include private
+trace text or `private_core_summary` content.
+
+Private debug traces are only returned when private mode is enabled and the
+private debug guard allows the payload. By default this requires
+`PSYCHODYNAMIC_PRIVATE_MEMORY_DEBUG=1`.
+
+`include_private_trace_text` controls private trace redaction:
+
+- `False`: retrieved `MemoryTrace` objects are included with
+  `private_core_summary` redacted to `None`. Future private complex labels and
+  private transformation input summaries are also redacted by the same helper.
+- `True`: `private_core_summary` may be included, but only when private debug
+  mode and the environment flag permit it, and only after the private debug guard
+  checks the resulting payload.
+
+Safe summaries and private traces remain separate. Safe output is suitable only
+for public mechanism-level observability; private debug output is developer-only
+and must continue to pass the stricter protected-content guard.

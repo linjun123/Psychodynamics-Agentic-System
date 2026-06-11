@@ -1,5 +1,6 @@
 from typing import Any
 
+from psychodynamic_agent.memory.store import PsychoanalyticMemoryStore
 from psychodynamic_agent.schemas import FullInternalState, Message
 
 PRIVATE_MEMORY_KEYS = {
@@ -29,6 +30,7 @@ class InMemoryConversation:
         self.previous_ego_reports: list[dict] = []
         self.previous_main_outputs: list[str] = []
         self.satisfaction_history: list[dict] = []
+        self.psychoanalytic_memory = PsychoanalyticMemoryStore()
 
     def build_state(self, user_input: str) -> FullInternalState:
         return FullInternalState(
@@ -56,11 +58,22 @@ class InMemoryConversation:
         self.history.append(Message(role="assistant", content=final_response))
         self.previous_main_outputs.append(final_response)
 
-        if not out:
-            return
+        safe_debug_trace = None
+        if out:
+            candidate = out.get("safe_debug_trace")
+            if isinstance(candidate, dict):
+                safe_debug_trace = candidate
 
-        safe_debug_trace = out.get("safe_debug_trace")
-        if not isinstance(safe_debug_trace, dict):
+        try:
+            self.psychoanalytic_memory.record_turn(
+                user_input=user_input,
+                final_response=final_response,
+                safe_debug_trace=safe_debug_trace,
+            )
+        except Exception:
+            pass
+
+        if safe_debug_trace is None:
             return
 
         ego_report = safe_debug_trace.get("ego_report")

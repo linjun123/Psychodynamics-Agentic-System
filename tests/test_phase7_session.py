@@ -310,7 +310,10 @@ def test_interactive_failure_resets_pipeline_and_preserves_public_memory(monkeyp
     ]
     assert "first response" in captured.out
     assert "recovered response" in captured.out
-    assert "Error while generating response: RuntimeError: temporary failure in [sealed]" in captured.err
+    assert (
+        "Error while generating response: RuntimeError: temporary failure in [sealed]"
+        in captured.err
+    )
     assert "session objective" not in captured.err
     assert (
         "Resetting pipeline after failed turn while preserving recorded public memory."
