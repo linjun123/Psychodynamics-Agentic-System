@@ -40,4 +40,6 @@ def redact_private_memory_debug_trace(trace: PrivateMemoryDebugTrace) -> Private
     )
     for record in redacted.transformation_chain:
         record.private_input_summary = None
+    for update in redacted.deferred_action_updates:
+        update.private_update_summary = None
     return redacted

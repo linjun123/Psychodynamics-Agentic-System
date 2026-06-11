@@ -3,6 +3,7 @@ from psychodynamic_agent.memory.association_scoring import (
     score_trace_association,
 )
 from psychodynamic_agent.memory.associator import MemoryAssociator
+from psychodynamic_agent.memory.condensation import build_condensed_memory_cue
 from psychodynamic_agent.memory.conscious_projection import build_conscious_memory_view
 from psychodynamic_agent.memory.debug import (
     MemoryDebugRuntimeConfig,
@@ -16,12 +17,16 @@ from psychodynamic_agent.memory.defense_policy import (
     choose_defensive_access,
     defense_pressure_score,
 )
+from psychodynamic_agent.memory.deferred_action import build_deferred_action_updates
+from psychodynamic_agent.memory.displacement import build_displaced_memory_cue
+from psychodynamic_agent.memory.distortion_engine import MemoryDistortionEngine
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
 from psychodynamic_agent.memory.output_guard import (
     assert_private_memory_debug_trace_allowed,
     assert_safe_memory_debug_summary,
 )
 from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
+from psychodynamic_agent.memory.screen_memory import build_screen_memory_cue
 from psychodynamic_agent.memory.store import PsychoanalyticMemoryStore
 
 __all__ = [
@@ -29,6 +34,11 @@ __all__ = [
     "MemoryAssociator",
     "PsychoanalyticMemoryStore",
     "MemoryDefenseGate",
+    "build_displaced_memory_cue",
+    "build_condensed_memory_cue",
+    "build_screen_memory_cue",
+    "build_deferred_action_updates",
+    "MemoryDistortionEngine",
     "build_conscious_memory_view",
     "choose_defensive_access",
     "defense_pressure_score",
