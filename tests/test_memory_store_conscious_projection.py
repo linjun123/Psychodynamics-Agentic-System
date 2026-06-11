@@ -122,3 +122,39 @@ def test_full_internal_state_has_no_memory_projection_fields() -> None:
     }
 
     assert forbidden.isdisjoint(FullInternalState.model_fields)
+
+
+def test_store_projection_does_not_emit_direct_cue_for_condensed_trace() -> None:
+    store = _store_with_trace()
+    trace = store.latest_trace()
+    assert trace is not None
+    store._traces[0] = trace.model_copy(update={"accessibility": "condensed"}, deep=True)
+
+    view = store.project_conscious_view_for_turn(user_input="structure evaluated task")
+    debug_trace = store.build_private_debug_trace(
+        config=MemoryDebugConfig(mode="private", include_private_trace_text=True),
+        env={"PSYCHODYNAMIC_PRIVATE_MEMORY_DEBUG": "1"},
+    )
+
+    assert all(cue.cue_type != "direct_memory" for cue in view.active_cues)
+    assert trace.private_core_summary not in view.model_dump_json()
+    assert debug_trace is not None
+    assert debug_trace.transformation_chain[0].mechanism == "condensation"
+
+
+def test_store_projection_does_not_emit_direct_cue_for_displaced_trace() -> None:
+    store = _store_with_trace()
+    trace = store.latest_trace()
+    assert trace is not None
+    store._traces[0] = trace.model_copy(update={"accessibility": "displaced"}, deep=True)
+
+    view = store.project_conscious_view_for_turn(user_input="structure evaluated task")
+    debug_trace = store.build_private_debug_trace(
+        config=MemoryDebugConfig(mode="private", include_private_trace_text=True),
+        env={"PSYCHODYNAMIC_PRIVATE_MEMORY_DEBUG": "1"},
+    )
+
+    assert all(cue.cue_type != "direct_memory" for cue in view.active_cues)
+    assert trace.private_core_summary not in view.model_dump_json()
+    assert debug_trace is not None
+    assert debug_trace.transformation_chain[0].mechanism == "displacement"

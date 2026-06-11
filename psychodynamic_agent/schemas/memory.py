@@ -58,6 +58,8 @@ MemoryAccessMode = Literal[
 MemoryDefenseAccess = Literal[
     "direct",
     "screened",
+    "condensed",
+    "displaced",
     "felt_sense_only",
     "blocked_action_only",
 ]

@@ -26,6 +26,8 @@ def choose_defensive_access(
         return "blocked_action_only"
     if repression_pressure >= 0.70:
         return "felt_sense_only"
+    if trace_accessibility in {"condensed", "displaced"}:
+        return trace_accessibility
     if trace_accessibility == "screened":
         return "screened"
     if defense_level >= 0.65:
@@ -61,6 +63,10 @@ def emits_conscious_cue(access: MemoryAccessMode) -> bool:
 
 
 def public_defense_reason(access: MemoryAccessMode) -> str:
+    if access == "condensed":
+        return "Trace is available only through a condensed transformation record."
+    if access == "displaced":
+        return "Trace is available only through a displaced transformation record."
     if access == "screened":
         return "Trace is available only through a screened conscious cue."
     if access == "felt_sense_only":

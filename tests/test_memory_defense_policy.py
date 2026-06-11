@@ -87,3 +87,37 @@ def test_mechanism_for_access_maps_public_modes() -> None:
 def test_emits_conscious_cue_false_for_blocked_action_only() -> None:
     assert emits_conscious_cue("blocked_action_only") is False
     assert emits_conscious_cue("direct") is True
+
+
+def test_condensed_trace_preserves_condensed_access() -> None:
+    assert (
+        choose_defensive_access(
+            trace_accessibility="condensed",
+            association_score=0.2,
+            defense_level=0.2,
+            repression_pressure=0.2,
+        )
+        == "condensed"
+    )
+
+
+def test_displaced_trace_preserves_displaced_access() -> None:
+    assert (
+        choose_defensive_access(
+            trace_accessibility="displaced",
+            association_score=0.2,
+            defense_level=0.2,
+            repression_pressure=0.2,
+        )
+        == "displaced"
+    )
+
+
+def test_mechanism_for_access_maps_condensed_and_displaced() -> None:
+    assert mechanism_for_access("condensed") == "condensation"
+    assert mechanism_for_access("displaced") == "displacement"
+
+
+def test_emits_conscious_cue_false_for_condensed_and_displaced() -> None:
+    assert emits_conscious_cue("condensed") is False
+    assert emits_conscious_cue("displaced") is False

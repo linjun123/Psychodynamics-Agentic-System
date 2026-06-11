@@ -133,3 +133,27 @@ def test_high_repression_produces_felt_sense_or_blocked_by_threshold() -> None:
 
     assert felt.decided_accessibility == "felt_sense_only"
     assert blocked.decided_accessibility == "blocked_action_only"
+
+
+def test_gate_preserves_condensed_access_without_direct_fallback() -> None:
+    decision = MemoryDefenseGate().decide(
+        activation=_activation(accessibility="condensed"),
+        trace=_trace(accessibility="condensed"),
+    )
+
+    assert decision.decided_accessibility == "condensed"
+    assert decision.conscious_access == "condensed"
+    assert decision.mechanism == "condensation"
+    assert decision.emits_conscious_cue is False
+
+
+def test_gate_preserves_displaced_access_without_direct_fallback() -> None:
+    decision = MemoryDefenseGate().decide(
+        activation=_activation(accessibility="displaced"),
+        trace=_trace(accessibility="displaced"),
+    )
+
+    assert decision.decided_accessibility == "displaced"
+    assert decision.conscious_access == "displaced"
+    assert decision.mechanism == "displacement"
+    assert decision.emits_conscious_cue is False

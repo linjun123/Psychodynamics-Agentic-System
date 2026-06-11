@@ -152,3 +152,31 @@ def test_view_pressures_are_clamped_and_no_cue_contains_private_summary() -> Non
     assert 0.0 <= projection.conscious_memory_view.caution <= 1.0
     assert "private_core_summary" not in view_json
     assert trace.private_core_summary not in view_json
+
+
+def test_condensed_decision_emits_no_cue_but_records_condensation() -> None:
+    trace = _trace(accessibility="condensed")
+    projection = _projection_for(trace)
+
+    assert projection.conscious_memory_view.active_cues == []
+    record = projection.transformation_chain[0]
+    assert record.mechanism == "condensation"
+    assert record.access_mode_before == "condensed"
+    assert record.access_mode_after == "condensed"
+    assert record.public_output_summary is not None
+    assert trace.surface_event_summary not in record.public_output_summary
+    assert trace.private_core_summary not in record.public_output_summary
+
+
+def test_displaced_decision_emits_no_cue_but_records_displacement() -> None:
+    trace = _trace(accessibility="displaced")
+    projection = _projection_for(trace)
+
+    assert projection.conscious_memory_view.active_cues == []
+    record = projection.transformation_chain[0]
+    assert record.mechanism == "displacement"
+    assert record.access_mode_before == "displaced"
+    assert record.access_mode_after == "displaced"
+    assert record.public_output_summary is not None
+    assert trace.surface_event_summary not in record.public_output_summary
+    assert trace.private_core_summary not in record.public_output_summary

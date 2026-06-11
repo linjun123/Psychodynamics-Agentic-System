@@ -71,7 +71,7 @@ def build_conscious_cue(
     trace: MemoryTrace,
     decision: MemoryDefenseDecision,
 ) -> ConsciousMemoryCue | None:
-    if not decision.emits_conscious_cue or decision.conscious_access == "blocked_action_only":
+    if not decision.emits_conscious_cue or decision.conscious_access not in _CUE_TYPE_BY_ACCESS:
         return None
     if decision.conscious_access == "direct":
         public_summary = public_summary_for_direct(trace, activation)

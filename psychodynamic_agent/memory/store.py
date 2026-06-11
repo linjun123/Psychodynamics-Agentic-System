@@ -158,10 +158,13 @@ class PsychoanalyticMemoryStore:
             memory_pressure = max(trace.affective_signature.arousal for trace in self._traces)
         else:
             memory_pressure = 0.0
-        active_mechanisms = ["direct"] if self._traces else []
-        for decision in self._latest_defense_decisions:
-            if decision.mechanism not in active_mechanisms:
-                active_mechanisms.append(decision.mechanism)
+        if self._latest_defense_decisions:
+            active_mechanisms = []
+            for decision in self._latest_defense_decisions:
+                if decision.mechanism not in active_mechanisms:
+                    active_mechanisms.append(decision.mechanism)
+        else:
+            active_mechanisms = ["direct"] if self._traces else []
         public_notes = [
             "Psychoanalytic memory store recorded traces.",
             (

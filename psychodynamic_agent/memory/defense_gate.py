@@ -1,5 +1,3 @@
-from typing import cast
-
 from psychodynamic_agent.memory.defense_policy import (
     choose_defensive_access,
     defense_pressure_score,
@@ -9,12 +7,9 @@ from psychodynamic_agent.memory.defense_policy import (
 )
 from psychodynamic_agent.schemas.memory import (
     MemoryActivation,
-    MemoryDefenseAccess,
     MemoryDefenseDecision,
     MemoryTrace,
 )
-
-_DEFENSE_ACCESS_VALUES = {"direct", "screened", "felt_sense_only", "blocked_action_only"}
 
 
 class MemoryDefenseGate:
@@ -30,7 +25,6 @@ class MemoryDefenseGate:
             defense_level=trace.defense_level,
             repression_pressure=trace.repression_pressure,
         )
-        conscious_access = decided_access if decided_access in _DEFENSE_ACCESS_VALUES else "direct"
         return MemoryDefenseDecision(
             trace_id=activation.trace_id,
             activation_rank=activation.activation_rank,
@@ -44,7 +38,7 @@ class MemoryDefenseGate:
                 defense_level=trace.defense_level,
                 repression_pressure=trace.repression_pressure,
             ),
-            conscious_access=cast(MemoryDefenseAccess, conscious_access),
+            conscious_access=decided_access,
             mechanism=mechanism_for_access(decided_access),
             emits_conscious_cue=emits_conscious_cue(decided_access),
             public_reason=public_defense_reason(decided_access),
