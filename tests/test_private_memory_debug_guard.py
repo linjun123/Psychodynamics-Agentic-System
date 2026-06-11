@@ -67,8 +67,18 @@ def test_safe_memory_debug_summary_passes_for_public_only_content() -> None:
     assert_safe_memory_debug_summary(summary)
 
 
-def test_safe_memory_debug_summary_rejects_private_core_summary_term() -> None:
-    summary = SafeMemoryDebugSummary(public_notes=["Contains private_core_summary marker."])
+@pytest.mark.parametrize(
+    "private_marker",
+    [
+        "private_core_summary",
+        "private core summary",
+        "sealed ultimate need",
+    ],
+)
+def test_safe_memory_debug_summary_rejects_private_marker_variants(
+    private_marker: str,
+) -> None:
+    summary = SafeMemoryDebugSummary(public_notes=[f"Contains {private_marker} marker."])
 
     with pytest.raises(ValueError):
         assert_safe_memory_debug_summary(summary)
@@ -94,7 +104,18 @@ def test_private_memory_debug_trace_rejects_sealed_ultimate_need_value() -> None
 
 @pytest.mark.parametrize(
     "forbidden_term",
-    ["latent_alignment", "chain_of_thought", "provider_private", "u_star", "sealed_ultimate_need"],
+    [
+        "latent_alignment",
+        "latent alignment",
+        "chain_of_thought",
+        "chain of thought",
+        "provider_private",
+        "provider private",
+        "u_star",
+        "sealed_ultimate_need",
+        "system prompt",
+        "developer message",
+    ],
 )
 def test_private_memory_debug_trace_rejects_forbidden_terms(forbidden_term: str) -> None:
     debug_trace = PrivateMemoryDebugTrace(

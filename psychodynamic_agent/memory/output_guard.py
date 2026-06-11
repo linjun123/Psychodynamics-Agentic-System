@@ -1,3 +1,4 @@
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -37,10 +38,23 @@ def _to_serializable_dict(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(mode="json")
 
 
+_SEPARATOR_PATTERN = re.compile(r"[_\-\s]+")
+
+
+def _normalize_forbidden_scan_text(value: str) -> str:
+    return _SEPARATOR_PATTERN.sub(" ", value.lower()).strip()
+
+
 def _string_contains_term(value: str, term: str) -> bool:
     if term == "U*":
         return term in value
-    return term.lower() in value.lower()
+
+    value_lower = value.lower()
+    term_lower = term.lower()
+    if term_lower in value_lower:
+        return True
+
+    return _normalize_forbidden_scan_text(term) in _normalize_forbidden_scan_text(value)
 
 
 def _scan_for_forbidden_terms(payload: object, forbidden_terms: list[str]) -> list[str]:

@@ -70,7 +70,7 @@ MemoryMechanism = Literal[
 
 class MemoryTrace(StrictSchemaModel):
     trace_id: str
-    created_turn: int
+    created_turn: int = Field(ge=0)
     last_activated_turn: int | None = None
     surface_event_summary: str
     private_core_summary: str | None = None
@@ -83,8 +83,8 @@ class MemoryTrace(StrictSchemaModel):
     repression_pressure: float = Field(ge=0.0, le=1.0)
     accessibility: MemoryAccessMode
     complex_ids: list[str] = Field(default_factory=list)
-    activation_count: int = 0
-    meaning_version: int = 1
+    activation_count: int = Field(default=0, ge=0)
+    meaning_version: int = Field(default=1, ge=1)
 
 
 class ConsciousMemoryCue(StrictSchemaModel):
@@ -163,8 +163,8 @@ class MemoryTransformationRecord(StrictSchemaModel):
 
 
 class SafeMemoryDebugSummary(StrictSchemaModel):
-    activated_trace_count: int = 0
-    activated_complex_count: int = 0
+    activated_trace_count: int = Field(default=0, ge=0)
+    activated_complex_count: int = Field(default=0, ge=0)
     dominant_public_affects: list[str] = Field(default_factory=list)
     active_mechanisms: list[MemoryMechanism] = Field(default_factory=list)
     memory_pressure: float = Field(default=0.0, ge=0.0, le=1.0)
