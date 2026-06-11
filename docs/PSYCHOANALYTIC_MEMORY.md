@@ -99,3 +99,24 @@ private traces for later phases to use.
 `FullInternalState`, conversation history, previous Ego reports, previous MainAI
 outputs, satisfaction history, safe debug traces, or final responses. Future LLM
 memory interpretation remains out of scope for this PR.
+
+## PR3: Affect-prioritized association retrieval
+
+PR3 adds deterministic, store-level association retrieval for private
+`MemoryTrace` records. Retrieval is modular and private: callers can build a
+`MemoryRetrievalQuery`, score stored traces, and receive `MemoryActivation`
+metadata from the memory store, but those activations are not wired into Ego,
+MainAI, SafetyGate, the runtime pipeline, or final response generation.
+
+Association retrieval intentionally prioritizes psychoanalytic-style similarity
+over factual/topic overlap. The scoring components emphasize affective,
+desire, and threat signatures first, then symbolic object overlap and salient
+symbols. Repetition frequency contributes a small bounded signal, factual text
+similarity remains deliberately low-weight, and defense/repression pressure
+penalizes direct activation without deleting or mutating the underlying trace.
+
+This PR does not add DefenseGate behavior, a `ConsciousMemoryView` projection,
+screen memory, condensation, displacement, deferred action, repetition-bias
+generation, complex clustering, LLM interpretation, API calls, or persistent
+storage. Retrieval is read-only: it does not increment `activation_count` or
+change stored `MemoryTrace` records.

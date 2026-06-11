@@ -68,6 +68,46 @@ MemoryMechanism = Literal[
 ]
 
 
+class AssociationScoreBreakdown(StrictSchemaModel):
+    affect_similarity: float = Field(ge=0.0, le=1.0)
+    desire_similarity: float = Field(ge=0.0, le=1.0)
+    threat_similarity: float = Field(ge=0.0, le=1.0)
+    object_overlap: float = Field(ge=0.0, le=1.0)
+    salient_symbol_overlap: float = Field(ge=0.0, le=1.0)
+    repetition_frequency: float = Field(ge=0.0, le=1.0)
+    fact_similarity: float = Field(ge=0.0, le=1.0)
+    defense_barrier: float = Field(ge=0.0, le=1.0)
+    weighted_score_before_defense: float = Field(ge=0.0, le=1.0)
+    final_score: float = Field(ge=0.0, le=1.0)
+
+
+class MemoryRetrievalQuery(StrictSchemaModel):
+    affective_signature: AffectiveSignature
+    desire_signature: DesireSignature
+    threat_signature: ThreatSignature
+    object_targets: list[str] = Field(default_factory=list)
+    salient_symbols: list[str] = Field(default_factory=list)
+    query_summary: str | None = None
+
+
+class MemoryActivation(StrictSchemaModel):
+    trace_id: str
+    created_turn: int = Field(ge=0)
+    activation_rank: int = Field(ge=1)
+    association_score: float = Field(ge=0.0, le=1.0)
+    components: AssociationScoreBreakdown
+    accessibility: MemoryAccessMode
+    source_complex_ids: list[str] = Field(default_factory=list)
+    matched_object_targets: list[str] = Field(default_factory=list)
+    matched_salient_symbols: list[str] = Field(default_factory=list)
+    public_reason: str
+
+
+class MemoryRetrievalResult(StrictSchemaModel):
+    query: MemoryRetrievalQuery
+    activations: list[MemoryActivation] = Field(default_factory=list)
+
+
 class MemoryTrace(StrictSchemaModel):
     trace_id: str
     created_turn: int = Field(ge=0)
@@ -176,6 +216,7 @@ class SafeMemoryDebugSummary(StrictSchemaModel):
 class PrivateMemoryDebugTrace(StrictSchemaModel):
     current_turn_summary: str | None = None
     retrieved_traces: list[MemoryTrace] = Field(default_factory=list)
+    retrieval_activations: list[MemoryActivation] = Field(default_factory=list)
     transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
     active_complexes: list[ComplexNode] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)

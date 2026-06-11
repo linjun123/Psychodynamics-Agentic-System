@@ -1,3 +1,8 @@
+from psychodynamic_agent.memory.association_scoring import (
+    build_memory_activation,
+    score_trace_association,
+)
+from psychodynamic_agent.memory.associator import MemoryAssociator
 from psychodynamic_agent.memory.debug import (
     MemoryDebugRuntimeConfig,
     build_private_memory_debug_trace_if_allowed,
@@ -10,11 +15,16 @@ from psychodynamic_agent.memory.output_guard import (
     assert_private_memory_debug_trace_allowed,
     assert_safe_memory_debug_summary,
 )
+from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
 from psychodynamic_agent.memory.store import PsychoanalyticMemoryStore
 
 __all__ = [
     "HeuristicMemoryExtractor",
+    "MemoryAssociator",
     "PsychoanalyticMemoryStore",
+    "build_memory_retrieval_query",
+    "score_trace_association",
+    "build_memory_activation",
     "MemoryDebugRuntimeConfig",
     "assert_safe_memory_debug_summary",
     "assert_private_memory_debug_trace_allowed",

@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 
+from psychodynamic_agent.memory.associator import MemoryAssociator
 from psychodynamic_agent.memory.debug import (
     build_private_memory_debug_trace_if_allowed,
     build_safe_memory_debug_summary,
@@ -7,7 +8,9 @@ from psychodynamic_agent.memory.debug import (
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
 from psychodynamic_agent.memory.heuristics import clamp_01
 from psychodynamic_agent.memory.redaction import redact_private_memory_debug_trace
+from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
 from psychodynamic_agent.schemas.memory import (
+    MemoryActivation,
     MemoryDebugConfig,
     MemoryTrace,
     PrivateMemoryDebugTrace,
@@ -16,9 +19,16 @@ from psychodynamic_agent.schemas.memory import (
 
 
 class PsychoanalyticMemoryStore:
-    def __init__(self, *, extractor: HeuristicMemoryExtractor | None = None):
+    def __init__(
+        self,
+        *,
+        extractor: HeuristicMemoryExtractor | None = None,
+        associator: MemoryAssociator | None = None,
+    ):
         self._extractor = extractor or HeuristicMemoryExtractor()
+        self._associator = associator or MemoryAssociator()
         self._traces: list[MemoryTrace] = []
+        self._last_retrieval_activations: list[MemoryActivation] = []
         self._next_turn = 1
 
     def record_turn(
@@ -51,10 +61,39 @@ class PsychoanalyticMemoryStore:
 
     def clear(self) -> None:
         self._traces.clear()
+        self._last_retrieval_activations.clear()
         self._next_turn = 1
 
     def trace_count(self) -> int:
         return len(self._traces)
+
+    def retrieve_related_to_turn(
+        self,
+        *,
+        user_input: str,
+        safe_debug_trace: dict | None = None,
+        top_k: int = 5,
+        min_score: float = 0.0,
+        include_blocked: bool = True,
+    ) -> list[MemoryActivation]:
+        query = build_memory_retrieval_query(
+            user_input=user_input,
+            safe_debug_trace=safe_debug_trace if isinstance(safe_debug_trace, dict) else None,
+        )
+        activations = self._associator.retrieve(
+            query=query,
+            traces=self._traces,
+            top_k=top_k,
+            min_score=min_score,
+            include_blocked=include_blocked,
+        )
+        self._last_retrieval_activations = [
+            activation.model_copy(deep=True) for activation in activations
+        ]
+        return self.latest_retrieval_activations()
+
+    def latest_retrieval_activations(self) -> list[MemoryActivation]:
+        return [activation.model_copy(deep=True) for activation in self._last_retrieval_activations]
 
     def build_safe_summary(self) -> SafeMemoryDebugSummary:
         latest = self._traces[-1] if self._traces else None
@@ -71,7 +110,11 @@ class PsychoanalyticMemoryStore:
             defense_pressure=latest.defense_level if latest else 0.0,
             repetition_pressure=0.0,
             public_notes=[
-                "Psychoanalytic memory store recorded traces; retrieval is not active yet."
+                "Psychoanalytic memory store recorded traces.",
+                (
+                    "Association retrieval is available for private memory inspection "
+                    "but is not wired into response generation."
+                ),
             ],
         )
 
@@ -87,6 +130,7 @@ class PsychoanalyticMemoryStore:
                 f"Psychoanalytic memory store contains {len(self._traces)} traces."
             ),
             retrieved_traces=self.all_traces(),
+            retrieval_activations=self.latest_retrieval_activations(),
             safe_summary=self.build_safe_summary(),
         )
         if not config.include_private_trace_text:
