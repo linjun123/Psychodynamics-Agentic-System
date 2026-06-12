@@ -21,6 +21,8 @@ _SAFE_MEMORY_FORBIDDEN_TERMS = [
     "provider_private",
     "private trace",
     "private memory trace",
+    "private repetition",
+    "repetition private",
 ]
 
 _PRIVATE_MEMORY_FORBIDDEN_TERMS = [

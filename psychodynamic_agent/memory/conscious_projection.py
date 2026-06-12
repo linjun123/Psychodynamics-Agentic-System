@@ -4,6 +4,7 @@ from psychodynamic_agent.memory.heuristics import (
     truncate_summary,
     unique_stable,
 )
+from psychodynamic_agent.memory.repetition_generation import repetition_label_for_view
 from psychodynamic_agent.schemas.memory import (
     ConsciousMemoryCue,
     ConsciousMemoryView,
@@ -11,6 +12,7 @@ from psychodynamic_agent.schemas.memory import (
     MemoryDefenseDecision,
     MemoryDistortionResult,
     MemoryProjectionResult,
+    MemoryRepetitionResult,
     MemoryTrace,
     MemoryTransformationRecord,
 )
@@ -118,6 +120,7 @@ def build_conscious_memory_view(
     decisions: list[MemoryDefenseDecision],
     max_cues: int = 5,
     distortion_result: MemoryDistortionResult | None = None,
+    repetition_result: MemoryRepetitionResult | None = None,
 ) -> MemoryProjectionResult:
     activations_by_id = {activation.trace_id: activation for activation in activations}
     traces_by_id = {trace.trace_id: trace for trace in traces}
@@ -129,6 +132,8 @@ def build_conscious_memory_view(
     represented_record_ids: set[str] = set()
     distortion_decisions = []
     deferred_action_updates = []
+    repetition_biases = []
+    repetition_triggers = []
 
     if distortion_result is not None:
         for cue in distortion_result.distorted_cues:
@@ -146,6 +151,14 @@ def build_conscious_memory_view(
         deferred_action_updates = [
             update.model_copy(deep=True)
             for update in distortion_result.deferred_action_updates
+        ]
+
+    if repetition_result is not None:
+        repetition_biases = [
+            bias.model_copy(deep=True) for bias in repetition_result.repetition_biases
+        ]
+        repetition_triggers = [
+            trigger.model_copy(deep=True) for trigger in repetition_result.triggers
         ]
 
     for decision in sorted(decisions, key=lambda item: item.activation_rank):
@@ -169,10 +182,12 @@ def build_conscious_memory_view(
     view = ConsciousMemoryView(
         active_cues=active_cues,
         dominant_complex_labels=[],
-        repetition_biases=[],
+        repetition_biases=[repetition_label_for_view(bias) for bias in repetition_biases],
         memory_pressure=clamp_01(memory_pressure),
         defense_pressure=clamp_01(defense_pressure),
-        repetition_pressure=0.0,
+        repetition_pressure=(
+            repetition_result.repetition_pressure if repetition_result is not None else 0.0
+        ),
         caution=clamp_01(defense_pressure),
     )
     return MemoryProjectionResult(
@@ -181,4 +196,6 @@ def build_conscious_memory_view(
         transformation_chain=[record.model_copy(deep=True) for record in transformation_chain],
         deferred_action_updates=deferred_action_updates,
         distortion_decisions=distortion_decisions,
+        repetition_biases=repetition_biases,
+        repetition_triggers=repetition_triggers,
     )

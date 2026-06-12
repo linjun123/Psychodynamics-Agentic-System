@@ -11,6 +11,7 @@ from psychodynamic_agent.memory.distortion_engine import MemoryDistortionEngine
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
 from psychodynamic_agent.memory.heuristics import clamp_01
 from psychodynamic_agent.memory.redaction import redact_private_memory_debug_trace
+from psychodynamic_agent.memory.repetition_engine import MemoryRepetitionEngine
 from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
 from psychodynamic_agent.schemas.memory import (
     ConsciousMemoryView,
@@ -19,9 +20,11 @@ from psychodynamic_agent.schemas.memory import (
     MemoryDefenseDecision,
     MemoryDeferredActionUpdate,
     MemoryDistortionDecision,
+    MemoryRepetitionTrigger,
     MemoryTrace,
     MemoryTransformationRecord,
     PrivateMemoryDebugTrace,
+    RepetitionBias,
     SafeMemoryDebugSummary,
 )
 
@@ -34,11 +37,13 @@ class PsychoanalyticMemoryStore:
         associator: MemoryAssociator | None = None,
         defense_gate: MemoryDefenseGate | None = None,
         distortion_engine: MemoryDistortionEngine | None = None,
+        repetition_engine: MemoryRepetitionEngine | None = None,
     ):
         self._extractor = extractor or HeuristicMemoryExtractor()
         self._associator = associator or MemoryAssociator()
         self._defense_gate = defense_gate or MemoryDefenseGate()
         self._distortion_engine = distortion_engine or MemoryDistortionEngine()
+        self._repetition_engine = repetition_engine or MemoryRepetitionEngine()
         self._traces: list[MemoryTrace] = []
         self._last_retrieval_activations: list[MemoryActivation] = []
         self._latest_conscious_memory_view: ConsciousMemoryView | None = None
@@ -46,6 +51,8 @@ class PsychoanalyticMemoryStore:
         self._latest_transformation_chain: list[MemoryTransformationRecord] = []
         self._latest_distortion_decisions: list[MemoryDistortionDecision] = []
         self._latest_deferred_action_updates: list[MemoryDeferredActionUpdate] = []
+        self._latest_repetition_triggers: list[MemoryRepetitionTrigger] = []
+        self._latest_repetition_biases: list[RepetitionBias] = []
         self._next_turn = 1
 
     def record_turn(
@@ -84,6 +91,8 @@ class PsychoanalyticMemoryStore:
         self._latest_transformation_chain.clear()
         self._latest_distortion_decisions.clear()
         self._latest_deferred_action_updates.clear()
+        self._latest_repetition_triggers.clear()
+        self._latest_repetition_biases.clear()
         self._next_turn = 1
 
     def trace_count(self) -> int:
@@ -142,12 +151,21 @@ class PsychoanalyticMemoryStore:
             latest_trace=self._traces[-1] if self._traces else None,
             max_cues=max_cues,
         )
+        repetition_result = self._repetition_engine.build_repetition_result(
+            activations=activations,
+            traces=self._traces,
+            decisions=decisions,
+            distortion_decisions=distortion_result.distortion_decisions,
+            deferred_action_updates=distortion_result.deferred_action_updates,
+            max_biases=5,
+        )
         projection = build_conscious_memory_view(
             activations=activations,
             traces=self._traces,
             decisions=decisions,
             max_cues=max_cues,
             distortion_result=distortion_result,
+            repetition_result=repetition_result,
         )
         self._latest_conscious_memory_view = projection.conscious_memory_view.model_copy(deep=True)
         self._latest_defense_decisions = [
@@ -161,6 +179,12 @@ class PsychoanalyticMemoryStore:
         ]
         self._latest_deferred_action_updates = [
             update.model_copy(deep=True) for update in projection.deferred_action_updates
+        ]
+        self._latest_repetition_triggers = [
+            trigger.model_copy(deep=True) for trigger in projection.repetition_triggers
+        ]
+        self._latest_repetition_biases = [
+            bias.model_copy(deep=True) for bias in projection.repetition_biases
         ]
         return self._latest_conscious_memory_view.model_copy(deep=True)
 
@@ -187,22 +211,34 @@ class PsychoanalyticMemoryStore:
             for update in self._latest_deferred_action_updates
         ]
 
+    def latest_repetition_triggers(self) -> list[MemoryRepetitionTrigger]:
+        return [
+            trigger.model_copy(deep=True) for trigger in self._latest_repetition_triggers
+        ]
+
+    def latest_repetition_biases(self) -> list[RepetitionBias]:
+        return [bias.model_copy(deep=True) for bias in self._latest_repetition_biases]
+
     def build_safe_summary(self) -> SafeMemoryDebugSummary:
         latest = self._traces[-1] if self._traces else None
         if self._traces:
             memory_pressure = max(trace.affective_signature.arousal for trace in self._traces)
         else:
             memory_pressure = 0.0
-        if self._latest_defense_decisions:
-            active_mechanisms = []
-            for decision in self._latest_defense_decisions:
-                if decision.mechanism not in active_mechanisms:
-                    active_mechanisms.append(decision.mechanism)
-            for decision in self._latest_distortion_decisions:
-                if decision.mechanism not in active_mechanisms:
-                    active_mechanisms.append(decision.mechanism)
-        else:
-            active_mechanisms = ["direct"] if self._traces else []
+        active_mechanisms = []
+
+        def append_unique(mechanism: str) -> None:
+            if mechanism not in active_mechanisms:
+                active_mechanisms.append(mechanism)
+
+        for decision in self._latest_defense_decisions:
+            append_unique(decision.mechanism)
+        for decision in self._latest_distortion_decisions:
+            append_unique(decision.mechanism)
+        if self._latest_repetition_biases:
+            append_unique("repetition_bias")
+        if not active_mechanisms and self._traces:
+            active_mechanisms.append("direct")
         public_notes = [
             "Psychoanalytic memory store recorded traces.",
             (
@@ -220,6 +256,11 @@ class PsychoanalyticMemoryStore:
                 "Memory distortion artifacts are available for private inspection "
                 "but are not wired into response generation."
             )
+        if self._latest_repetition_biases:
+            public_notes.append(
+                "Repetition-bias artifacts are available for private inspection "
+                "but are not wired into response generation."
+            )
         return build_safe_memory_debug_summary(
             activated_trace_count=len(self._traces),
             activated_complex_count=0,
@@ -227,7 +268,9 @@ class PsychoanalyticMemoryStore:
             active_mechanisms=active_mechanisms,
             memory_pressure=clamp_01(memory_pressure),
             defense_pressure=latest.defense_level if latest else 0.0,
-            repetition_pressure=0.0,
+            repetition_pressure=clamp_01(
+                max((bias.intensity for bias in self._latest_repetition_biases), default=0.0)
+            ),
             public_notes=public_notes,
         )
 
@@ -248,6 +291,8 @@ class PsychoanalyticMemoryStore:
             transformation_chain=self.latest_transformation_chain(),
             distortion_decisions=self.latest_distortion_decisions(),
             deferred_action_updates=self.latest_deferred_action_updates(),
+            repetition_triggers=self.latest_repetition_triggers(),
+            repetition_biases=self.latest_repetition_biases(),
             conscious_memory_view=self.latest_conscious_memory_view(),
             safe_summary=self.build_safe_summary(),
         )

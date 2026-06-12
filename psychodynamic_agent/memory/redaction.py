@@ -35,6 +35,12 @@ def redact_private_memory_debug_trace(trace: PrivateMemoryDebugTrace) -> Private
     redacted.defense_decisions = [
         _copy_defense_decision(decision) for decision in redacted.defense_decisions
     ]
+    redacted.repetition_triggers = [
+        trigger.model_copy(deep=True) for trigger in redacted.repetition_triggers
+    ]
+    redacted.repetition_biases = [
+        bias.model_copy(deep=True) for bias in redacted.repetition_biases
+    ]
     redacted.conscious_memory_view = _copy_conscious_memory_view(
         redacted.conscious_memory_view
     )
