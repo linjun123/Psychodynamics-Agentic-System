@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 
 from psychodynamic_agent.memory.associator import MemoryAssociator
+from psychodynamic_agent.memory.complex_engine import MemoryComplexEngine
 from psychodynamic_agent.memory.conscious_projection import build_conscious_memory_view
 from psychodynamic_agent.memory.debug import (
     build_private_memory_debug_trace_if_allowed,
@@ -9,13 +10,15 @@ from psychodynamic_agent.memory.debug import (
 from psychodynamic_agent.memory.defense_gate import MemoryDefenseGate
 from psychodynamic_agent.memory.distortion_engine import MemoryDistortionEngine
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
-from psychodynamic_agent.memory.heuristics import clamp_01
+from psychodynamic_agent.memory.heuristics import clamp_01, unique_stable
 from psychodynamic_agent.memory.redaction import redact_private_memory_debug_trace
 from psychodynamic_agent.memory.repetition_engine import MemoryRepetitionEngine
 from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
 from psychodynamic_agent.schemas.memory import (
+    ComplexNode,
     ConsciousMemoryView,
     MemoryActivation,
+    MemoryComplexActivation,
     MemoryDebugConfig,
     MemoryDefenseDecision,
     MemoryDeferredActionUpdate,
@@ -38,12 +41,14 @@ class PsychoanalyticMemoryStore:
         defense_gate: MemoryDefenseGate | None = None,
         distortion_engine: MemoryDistortionEngine | None = None,
         repetition_engine: MemoryRepetitionEngine | None = None,
+        complex_engine: MemoryComplexEngine | None = None,
     ):
         self._extractor = extractor or HeuristicMemoryExtractor()
         self._associator = associator or MemoryAssociator()
         self._defense_gate = defense_gate or MemoryDefenseGate()
         self._distortion_engine = distortion_engine or MemoryDistortionEngine()
         self._repetition_engine = repetition_engine or MemoryRepetitionEngine()
+        self._complex_engine = complex_engine or MemoryComplexEngine()
         self._traces: list[MemoryTrace] = []
         self._last_retrieval_activations: list[MemoryActivation] = []
         self._latest_conscious_memory_view: ConsciousMemoryView | None = None
@@ -53,6 +58,9 @@ class PsychoanalyticMemoryStore:
         self._latest_deferred_action_updates: list[MemoryDeferredActionUpdate] = []
         self._latest_repetition_triggers: list[MemoryRepetitionTrigger] = []
         self._latest_repetition_biases: list[RepetitionBias] = []
+        self._complexes: list[ComplexNode] = []
+        self._next_complex_index = 1
+        self._latest_complex_activations: list[MemoryComplexActivation] = []
         self._next_turn = 1
 
     def record_turn(
@@ -71,7 +79,22 @@ class PsychoanalyticMemoryStore:
             final_response=final_response,
             safe_debug_trace=safe_debug_trace if isinstance(safe_debug_trace, dict) else None,
         )
-        self._traces.append(trace.model_copy(deep=True))
+        stored_trace = trace.model_copy(deep=True)
+        self._traces.append(stored_trace)
+        try:
+            (
+                self._complexes,
+                _,
+                _,
+                self._next_complex_index,
+            ) = self._complex_engine.update_with_trace(
+                trace=stored_trace,
+                complexes=self._complexes,
+                all_traces=self._traces,
+                next_complex_index=self._next_complex_index,
+            )
+        except Exception:
+            pass
         self._next_turn += 1
         return trace.model_copy(deep=True)
 
@@ -83,6 +106,15 @@ class PsychoanalyticMemoryStore:
             return None
         return self._traces[-1].model_copy(deep=True)
 
+    def all_complexes(self) -> list[ComplexNode]:
+        return [complex_node.model_copy(deep=True) for complex_node in self._complexes]
+
+    def latest_complex_activations(self) -> list[MemoryComplexActivation]:
+        return [
+            activation.model_copy(deep=True)
+            for activation in self._latest_complex_activations
+        ]
+
     def clear(self) -> None:
         self._traces.clear()
         self._last_retrieval_activations.clear()
@@ -93,6 +125,9 @@ class PsychoanalyticMemoryStore:
         self._latest_deferred_action_updates.clear()
         self._latest_repetition_triggers.clear()
         self._latest_repetition_biases.clear()
+        self._complexes.clear()
+        self._next_complex_index = 1
+        self._latest_complex_activations.clear()
         self._next_turn = 1
 
     def trace_count(self) -> int:
@@ -159,6 +194,20 @@ class PsychoanalyticMemoryStore:
             deferred_action_updates=distortion_result.deferred_action_updates,
             max_biases=5,
         )
+        complex_result = self._complex_engine.activate(
+            complexes=self._complexes,
+            activations=activations,
+            traces=self._traces,
+            repetition_biases=repetition_result.repetition_biases,
+            current_turn=self._next_turn - 1,
+        )
+        self._complexes = [
+            complex_node.model_copy(deep=True) for complex_node in complex_result.complexes
+        ]
+        self._latest_complex_activations = [
+            activation.model_copy(deep=True)
+            for activation in complex_result.activated_complexes
+        ]
         projection = build_conscious_memory_view(
             activations=activations,
             traces=self._traces,
@@ -166,6 +215,7 @@ class PsychoanalyticMemoryStore:
             max_cues=max_cues,
             distortion_result=distortion_result,
             repetition_result=repetition_result,
+            complex_activations=self._latest_complex_activations,
         )
         self._latest_conscious_memory_view = projection.conscious_memory_view.model_copy(deep=True)
         self._latest_defense_decisions = [
@@ -237,6 +287,15 @@ class PsychoanalyticMemoryStore:
             append_unique(decision.mechanism)
         if self._latest_repetition_biases:
             append_unique("repetition_bias")
+        if self._latest_complex_activations:
+            append_unique("complex_activation")
+            memory_pressure = max(
+                memory_pressure,
+                max(
+                    activation.activation_score
+                    for activation in self._latest_complex_activations
+                ),
+            )
         if not active_mechanisms and self._traces:
             active_mechanisms.append("direct")
         public_notes = [
@@ -261,10 +320,22 @@ class PsychoanalyticMemoryStore:
                 "Repetition-bias artifacts are available for private inspection "
                 "but are not wired into response generation."
             )
+        if self._latest_complex_activations:
+            public_notes.append(
+                "Complex activation artifacts are available for private inspection "
+                "but are not wired into response generation."
+            )
         return build_safe_memory_debug_summary(
             activated_trace_count=len(self._traces),
-            activated_complex_count=0,
-            dominant_public_affects=list(latest.salient_symbols) if latest else [],
+            activated_complex_count=len(self._latest_complex_activations),
+            dominant_public_affects=unique_stable(
+                (list(latest.salient_symbols) if latest else [])
+                + [
+                    affect
+                    for activation in self._latest_complex_activations
+                    for affect in activation.dominant_public_affects
+                ]
+            ),
             active_mechanisms=active_mechanisms,
             memory_pressure=clamp_01(memory_pressure),
             defense_pressure=latest.defense_level if latest else 0.0,
@@ -273,6 +344,14 @@ class PsychoanalyticMemoryStore:
             ),
             public_notes=public_notes,
         )
+
+    def _latest_active_complex_nodes(self) -> list[ComplexNode]:
+        active_ids = {activation.complex_id for activation in self._latest_complex_activations}
+        return [
+            complex_node.model_copy(deep=True)
+            for complex_node in self._complexes
+            if complex_node.complex_id in active_ids
+        ]
 
     def build_private_debug_trace(
         self,
@@ -291,6 +370,8 @@ class PsychoanalyticMemoryStore:
             transformation_chain=self.latest_transformation_chain(),
             distortion_decisions=self.latest_distortion_decisions(),
             deferred_action_updates=self.latest_deferred_action_updates(),
+            active_complexes=self._latest_active_complex_nodes(),
+            complex_activations=self.latest_complex_activations(),
             repetition_triggers=self.latest_repetition_triggers(),
             repetition_biases=self.latest_repetition_biases(),
             conscious_memory_view=self.latest_conscious_memory_view(),

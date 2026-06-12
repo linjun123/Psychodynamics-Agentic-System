@@ -3,6 +3,12 @@ from psychodynamic_agent.memory.association_scoring import (
     score_trace_association,
 )
 from psychodynamic_agent.memory.associator import MemoryAssociator
+from psychodynamic_agent.memory.complex_activation import activate_complexes
+from psychodynamic_agent.memory.complex_clustering import (
+    create_complex_from_trace,
+    rebuild_complexes_from_traces,
+)
+from psychodynamic_agent.memory.complex_engine import MemoryComplexEngine
 from psychodynamic_agent.memory.condensation import build_condensed_memory_cue
 from psychodynamic_agent.memory.conscious_projection import build_conscious_memory_view
 from psychodynamic_agent.memory.debug import (
@@ -50,6 +56,10 @@ __all__ = [
     "build_deferred_action_updates",
     "MemoryDistortionEngine",
     "MemoryRepetitionEngine",
+    "MemoryComplexEngine",
+    "activate_complexes",
+    "create_complex_from_trace",
+    "rebuild_complexes_from_traces",
     "build_conscious_memory_view",
     "build_repetition_trigger",
     "build_repetition_bias_from_trigger",
