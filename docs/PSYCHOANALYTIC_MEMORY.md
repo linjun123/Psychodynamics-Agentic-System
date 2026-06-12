@@ -215,3 +215,34 @@ Boundary notes:
 - No LLM interpreter or OpenAI API call is used.
 - No complex clustering, persistent storage, `activation_count` mutation, or historical
   `meaning_version` mutation is introduced.
+
+## PR7: Psychoanalytic complexes
+
+Psychoanalytic complexes add deterministic, store-level clustering over `MemoryTrace`
+records. A `ComplexNode` groups memory traces that share affective signatures,
+desire signatures, threat signatures, object targets, and salient symbols. These
+clusters are internal simulation artifacts for developer/debug inspection; they
+are not diagnoses, clinical interpretations, or claims about the user.
+
+Each complex maintains public-safe organizing metadata:
+
+- a safe public cluster label such as `evaluation_sensitivity_cluster`,
+  `loss_anxiety_cluster`, or `boundary_pressure_cluster`;
+- dominant public affect, desire, and threat labels;
+- common object targets;
+- trace IDs for private/store inspection;
+- a bounded charge value that changes when traces join the cluster or when the
+  cluster is activated.
+
+Complex charge is deterministic. New related traces can update the cluster's
+charge and dominant labels, while projection-time activation can raise or decay
+charge at the store/debug layer. Activation uses existing retrieved
+`MemoryActivation` records, but it does not change memory activation scores and
+does not mutate `MemoryTrace` content.
+
+When a complex activates, the store can add its public label to the
+store-level `ConsciousMemoryView.dominant_complex_labels`. The view contains
+public labels only: no private labels, private trace summaries, source trace IDs,
+or clinical interpretation. Complexes remain store/debug-level only in this PR.
+They are not wired into IdAgent, EgoAgent, CensorA, CensorB, MainAI,
+SafetyGate, `FullInternalState`, or the runtime pipeline.

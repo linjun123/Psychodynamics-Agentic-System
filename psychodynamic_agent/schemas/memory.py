@@ -221,7 +221,7 @@ class RepetitionBias(StrictSchemaModel):
 
 class ComplexNode(StrictSchemaModel):
     complex_id: str
-    private_label: str | None = None
+    private_label: str | None = Field(default=None, exclude=True)
     public_label: str
     dominant_affects: list[str] = Field(default_factory=list)
     dominant_desires: list[str] = Field(default_factory=list)
@@ -233,6 +233,27 @@ class ComplexNode(StrictSchemaModel):
     last_activated_turn: int | None = None
     preferred_defenses: list[str] = Field(default_factory=list)
     repetition_tendencies: list[str] = Field(default_factory=list)
+
+
+class MemoryComplexActivation(StrictSchemaModel):
+    complex_id: str
+    public_label: str
+    private_label: str | None = Field(default=None, exclude=True)
+    source_trace_ids: list[str] = Field(default_factory=list)
+    source_activation_trace_ids: list[str] = Field(default_factory=list)
+    activation_score: float = Field(ge=0.0, le=1.0)
+    charge: float = Field(ge=0.0, le=1.0)
+    dominant_public_affects: list[str] = Field(default_factory=list)
+    preferred_defenses: list[str] = Field(default_factory=list)
+    repetition_tendencies: list[str] = Field(default_factory=list)
+    public_reason: str
+
+
+class MemoryComplexUpdateResult(StrictSchemaModel):
+    complexes: list[ComplexNode] = Field(default_factory=list)
+    created_complexes: list[ComplexNode] = Field(default_factory=list)
+    updated_complexes: list[ComplexNode] = Field(default_factory=list)
+    activated_complexes: list[MemoryComplexActivation] = Field(default_factory=list)
 
 
 class MemoryTransformationRecord(StrictSchemaModel):
@@ -306,6 +327,7 @@ class MemoryProjectionResult(StrictSchemaModel):
     distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)
     repetition_triggers: list[MemoryRepetitionTrigger] = Field(default_factory=list)
+    complex_activations: list[MemoryComplexActivation] = Field(default_factory=list)
 
 
 class SafeMemoryDebugSummary(StrictSchemaModel):
@@ -328,6 +350,7 @@ class PrivateMemoryDebugTrace(StrictSchemaModel):
     distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
     deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
     active_complexes: list[ComplexNode] = Field(default_factory=list)
+    complex_activations: list[MemoryComplexActivation] = Field(default_factory=list)
     repetition_triggers: list[MemoryRepetitionTrigger] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)
     conscious_memory_view: ConsciousMemoryView | None = None

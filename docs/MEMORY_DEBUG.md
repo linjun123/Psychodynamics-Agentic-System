@@ -175,3 +175,27 @@ Safe debug remains mechanism-level. `SafeMemoryDebugSummary` may include a bound
 `repetition_pressure` and a public note that repetition-bias artifacts exist for private
 inspection, but it does not include repetition trigger payloads, source trace IDs, private
 summaries, or raw private text.
+
+## PR7: Complex debug artifacts
+
+Private memory debug output can include psychoanalytic complex artifacts:
+
+- `active_complexes`: `ComplexNode` records corresponding to the latest activated
+  complexes;
+- `complex_activations`: activation records describing which public-safe complex
+  labels were activated by retrieved memory traces.
+
+Complex activation is not chain-of-thought and is not a clinical diagnosis. It is
+bounded store-level metadata for inspecting charged associative clusters in the
+psychoanalytic memory simulation.
+
+When `include_private_trace_text=False`, private debug redaction clears complex
+`private_label` values along with private trace text. Public labels, public
+reasons, dominant public affect labels, charge, and activation score can remain
+available because they are safe, non-clinical debug metadata.
+
+Safe memory summaries can include an activated complex count and public affect
+labels derived from active complexes. They must not include private labels,
+private trace summaries, private input summaries, private update summaries, or
+complex source trace IDs. `ConsciousMemoryView` likewise exposes public complex
+labels only.

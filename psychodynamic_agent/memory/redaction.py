@@ -29,6 +29,8 @@ def redact_private_memory_debug_trace(trace: PrivateMemoryDebugTrace) -> Private
     ]
     for complex_node in redacted.active_complexes:
         complex_node.private_label = None
+    for activation in redacted.complex_activations:
+        activation.private_label = None
     redacted.retrieval_activations = [
         activation.model_copy(deep=True) for activation in redacted.retrieval_activations
     ]

@@ -9,6 +9,7 @@ from psychodynamic_agent.schemas.memory import (
     ConsciousMemoryCue,
     ConsciousMemoryView,
     MemoryActivation,
+    MemoryComplexActivation,
     MemoryDefenseDecision,
     MemoryDistortionResult,
     MemoryProjectionResult,
@@ -121,6 +122,7 @@ def build_conscious_memory_view(
     max_cues: int = 5,
     distortion_result: MemoryDistortionResult | None = None,
     repetition_result: MemoryRepetitionResult | None = None,
+    complex_activations: list[MemoryComplexActivation] | None = None,
 ) -> MemoryProjectionResult:
     activations_by_id = {activation.trace_id: activation for activation in activations}
     traces_by_id = {trace.trace_id: trace for trace in traces}
@@ -179,9 +181,13 @@ def build_conscious_memory_view(
 
     memory_pressure = max((activation.association_score for activation in activations), default=0.0)
     defense_pressure = max((decision.defense_pressure for decision in decisions), default=0.0)
+    complex_labels = unique_stable(
+        [activation.public_label for activation in (complex_activations or [])],
+        limit=5,
+    )
     view = ConsciousMemoryView(
         active_cues=active_cues,
-        dominant_complex_labels=[],
+        dominant_complex_labels=complex_labels,
         repetition_biases=[repetition_label_for_view(bias) for bias in repetition_biases],
         memory_pressure=clamp_01(memory_pressure),
         defense_pressure=clamp_01(defense_pressure),
@@ -198,4 +204,7 @@ def build_conscious_memory_view(
         distortion_decisions=distortion_decisions,
         repetition_biases=repetition_biases,
         repetition_triggers=repetition_triggers,
+        complex_activations=[
+            activation.model_copy(deep=True) for activation in (complex_activations or [])
+        ],
     )
