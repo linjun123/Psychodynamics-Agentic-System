@@ -125,3 +125,29 @@ stored fields are public-safe. Defense decisions use public-safe reasons only.
 `ConsciousMemoryView` is conscious-compatible, but it is not runtime-wired in
 PR4. It is not passed to Ego/MainAI/SafetyGate and does not alter final
 responses.
+
+## PR5 private memory distortion debug artifacts
+
+Private memory debug traces can now include deterministic memory distortion artifacts:
+
+- `distortion_decisions` records which store-level distortion mode was selected, including
+  screen memory, condensation, displacement, and deferred-action inspection records.
+- `deferred_action_updates` records candidate retrospective meaning updates for developer
+  inspection only. These candidates do not mutate historical `MemoryTrace` content and do
+  not increment stored meaning versions automatically.
+- `transformation_chain` can include distortion transformation records alongside base
+  defense projection records.
+
+Redaction behavior is unchanged in principle and expanded for deferred action:
+
+- When `include_private_trace_text=False`, `MemoryTrace.private_core_summary` is redacted.
+- When `include_private_trace_text=False`,
+  `MemoryTransformationRecord.private_input_summary` is redacted.
+- When `include_private_trace_text=False`,
+  `MemoryDeferredActionUpdate.private_update_summary` is redacted.
+- `MemoryDeferredActionUpdate.public_update_summary`, `distortion_decisions`,
+  `retrieval_activations`, `defense_decisions`, and `conscious_memory_view` are preserved.
+
+`ConsciousMemoryView` remains public/conscious-compatible and private-summary-free. Safe
+memory debug summaries remain mechanism-level only and do not include deferred-action
+records, private input summaries, or private update summaries.

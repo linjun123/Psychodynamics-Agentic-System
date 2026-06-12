@@ -9,6 +9,7 @@ from psychodynamic_agent.schemas.memory import (
     ConsciousMemoryView,
     MemoryActivation,
     MemoryDefenseDecision,
+    MemoryDistortionResult,
     MemoryProjectionResult,
     MemoryTrace,
     MemoryTransformationRecord,
@@ -116,24 +117,52 @@ def build_conscious_memory_view(
     traces: list[MemoryTrace],
     decisions: list[MemoryDefenseDecision],
     max_cues: int = 5,
+    distortion_result: MemoryDistortionResult | None = None,
 ) -> MemoryProjectionResult:
     activations_by_id = {activation.trace_id: activation for activation in activations}
     traces_by_id = {trace.trace_id: trace for trace in traces}
     active_cues: list[ConsciousMemoryCue] = []
     transformation_chain: list[MemoryTransformationRecord] = []
     cue_limit = max(int(max_cues), 0)
+    suppressed_trace_ids: set[str] = set()
+    represented_trace_ids: set[str] = set()
+    represented_record_ids: set[str] = set()
+    distortion_decisions = []
+    deferred_action_updates = []
+
+    if distortion_result is not None:
+        for cue in distortion_result.distorted_cues:
+            if len(active_cues) < cue_limit:
+                active_cues.append(cue.model_copy(deep=True))
+            represented_trace_ids.update(cue.source_trace_ids)
+        suppressed_trace_ids.update(distortion_result.suppressed_trace_ids)
+        for record in distortion_result.transformation_chain:
+            transformation_chain.append(record.model_copy(deep=True))
+            represented_record_ids.update(record.source_trace_ids)
+        distortion_decisions = [
+            decision.model_copy(deep=True)
+            for decision in distortion_result.distortion_decisions
+        ]
+        deferred_action_updates = [
+            update.model_copy(deep=True)
+            for update in distortion_result.deferred_action_updates
+        ]
 
     for decision in sorted(decisions, key=lambda item: item.activation_rank):
         activation = activations_by_id.get(decision.trace_id)
         trace = traces_by_id.get(decision.trace_id)
         if activation is None or trace is None:
             continue
-        cue = build_conscious_cue(activation=activation, trace=trace, decision=decision)
-        if cue is not None and len(active_cues) < cue_limit:
-            active_cues.append(cue.model_copy(deep=True))
-        transformation_chain.append(
-            transformation_record_for_decision(trace=trace, decision=decision, cue=cue)
-        )
+        if decision.trace_id in suppressed_trace_ids or decision.trace_id in represented_trace_ids:
+            cue = None
+        else:
+            cue = build_conscious_cue(activation=activation, trace=trace, decision=decision)
+            if cue is not None and len(active_cues) < cue_limit:
+                active_cues.append(cue.model_copy(deep=True))
+        if decision.trace_id not in represented_record_ids:
+            transformation_chain.append(
+                transformation_record_for_decision(trace=trace, decision=decision, cue=cue)
+            )
 
     memory_pressure = max((activation.association_score for activation in activations), default=0.0)
     defense_pressure = max((decision.defense_pressure for decision in decisions), default=0.0)
@@ -150,4 +179,6 @@ def build_conscious_memory_view(
         conscious_memory_view=view,
         defense_decisions=[decision.model_copy(deep=True) for decision in decisions],
         transformation_chain=[record.model_copy(deep=True) for record in transformation_chain],
+        deferred_action_updates=deferred_action_updates,
+        distortion_decisions=distortion_decisions,
     )

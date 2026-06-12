@@ -7,6 +7,7 @@ from psychodynamic_agent.memory.debug import (
     build_safe_memory_debug_summary,
 )
 from psychodynamic_agent.memory.defense_gate import MemoryDefenseGate
+from psychodynamic_agent.memory.distortion_engine import MemoryDistortionEngine
 from psychodynamic_agent.memory.extractor import HeuristicMemoryExtractor
 from psychodynamic_agent.memory.heuristics import clamp_01
 from psychodynamic_agent.memory.redaction import redact_private_memory_debug_trace
@@ -16,6 +17,8 @@ from psychodynamic_agent.schemas.memory import (
     MemoryActivation,
     MemoryDebugConfig,
     MemoryDefenseDecision,
+    MemoryDeferredActionUpdate,
+    MemoryDistortionDecision,
     MemoryTrace,
     MemoryTransformationRecord,
     PrivateMemoryDebugTrace,
@@ -30,15 +33,19 @@ class PsychoanalyticMemoryStore:
         extractor: HeuristicMemoryExtractor | None = None,
         associator: MemoryAssociator | None = None,
         defense_gate: MemoryDefenseGate | None = None,
+        distortion_engine: MemoryDistortionEngine | None = None,
     ):
         self._extractor = extractor or HeuristicMemoryExtractor()
         self._associator = associator or MemoryAssociator()
         self._defense_gate = defense_gate or MemoryDefenseGate()
+        self._distortion_engine = distortion_engine or MemoryDistortionEngine()
         self._traces: list[MemoryTrace] = []
         self._last_retrieval_activations: list[MemoryActivation] = []
         self._latest_conscious_memory_view: ConsciousMemoryView | None = None
         self._latest_defense_decisions: list[MemoryDefenseDecision] = []
         self._latest_transformation_chain: list[MemoryTransformationRecord] = []
+        self._latest_distortion_decisions: list[MemoryDistortionDecision] = []
+        self._latest_deferred_action_updates: list[MemoryDeferredActionUpdate] = []
         self._next_turn = 1
 
     def record_turn(
@@ -75,6 +82,8 @@ class PsychoanalyticMemoryStore:
         self._latest_conscious_memory_view = None
         self._latest_defense_decisions.clear()
         self._latest_transformation_chain.clear()
+        self._latest_distortion_decisions.clear()
+        self._latest_deferred_action_updates.clear()
         self._next_turn = 1
 
     def trace_count(self) -> int:
@@ -126,11 +135,19 @@ class PsychoanalyticMemoryStore:
             include_blocked=include_blocked,
         )
         decisions = self._defense_gate.decide_many(activations=activations, traces=self._traces)
+        distortion_result = self._distortion_engine.build_distortion_result(
+            activations=activations,
+            traces=self._traces,
+            decisions=decisions,
+            latest_trace=self._traces[-1] if self._traces else None,
+            max_cues=max_cues,
+        )
         projection = build_conscious_memory_view(
             activations=activations,
             traces=self._traces,
             decisions=decisions,
             max_cues=max_cues,
+            distortion_result=distortion_result,
         )
         self._latest_conscious_memory_view = projection.conscious_memory_view.model_copy(deep=True)
         self._latest_defense_decisions = [
@@ -138,6 +155,12 @@ class PsychoanalyticMemoryStore:
         ]
         self._latest_transformation_chain = [
             record.model_copy(deep=True) for record in projection.transformation_chain
+        ]
+        self._latest_distortion_decisions = [
+            decision.model_copy(deep=True) for decision in projection.distortion_decisions
+        ]
+        self._latest_deferred_action_updates = [
+            update.model_copy(deep=True) for update in projection.deferred_action_updates
         ]
         return self._latest_conscious_memory_view.model_copy(deep=True)
 
@@ -152,6 +175,18 @@ class PsychoanalyticMemoryStore:
     def latest_transformation_chain(self) -> list[MemoryTransformationRecord]:
         return [record.model_copy(deep=True) for record in self._latest_transformation_chain]
 
+    def latest_distortion_decisions(self) -> list[MemoryDistortionDecision]:
+        return [
+            decision.model_copy(deep=True)
+            for decision in self._latest_distortion_decisions
+        ]
+
+    def latest_deferred_action_updates(self) -> list[MemoryDeferredActionUpdate]:
+        return [
+            update.model_copy(deep=True)
+            for update in self._latest_deferred_action_updates
+        ]
+
     def build_safe_summary(self) -> SafeMemoryDebugSummary:
         latest = self._traces[-1] if self._traces else None
         if self._traces:
@@ -161,6 +196,9 @@ class PsychoanalyticMemoryStore:
         if self._latest_defense_decisions:
             active_mechanisms = []
             for decision in self._latest_defense_decisions:
+                if decision.mechanism not in active_mechanisms:
+                    active_mechanisms.append(decision.mechanism)
+            for decision in self._latest_distortion_decisions:
                 if decision.mechanism not in active_mechanisms:
                     active_mechanisms.append(decision.mechanism)
         else:
@@ -176,6 +214,11 @@ class PsychoanalyticMemoryStore:
             public_notes.append(
                 "Defensive memory projection is available for private inspection "
                 "but is not wired into response generation."
+            )
+        if self._latest_distortion_decisions:
+            public_notes.append(
+                "Memory distortion artifacts are available for private inspection "
+                "but are not wired into response generation."
             )
         return build_safe_memory_debug_summary(
             activated_trace_count=len(self._traces),
@@ -203,6 +246,8 @@ class PsychoanalyticMemoryStore:
             retrieval_activations=self.latest_retrieval_activations(),
             defense_decisions=self.latest_defense_decisions(),
             transformation_chain=self.latest_transformation_chain(),
+            distortion_decisions=self.latest_distortion_decisions(),
+            deferred_action_updates=self.latest_deferred_action_updates(),
             conscious_memory_view=self.latest_conscious_memory_view(),
             safe_summary=self.build_safe_summary(),
         )

@@ -9,6 +9,8 @@ from psychodynamic_agent.schemas.memory import PrivateMemoryDebugTrace, SafeMemo
 _SAFE_MEMORY_FORBIDDEN_TERMS = [
     "private_core_summary",
     "private_input_summary",
+    "private_update_summary",
+    "deferred_action_updates",
     "sealed_ultimate_need",
     "ultimate_need",
     "u_star",

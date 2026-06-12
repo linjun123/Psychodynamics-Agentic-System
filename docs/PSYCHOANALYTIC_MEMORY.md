@@ -150,3 +150,35 @@ pipeline, or used to change final responses. This PR also does not add a full
 memory distortion engine, repetition-bias generation, complex clustering,
 condensation, displacement, deferred action, LLM memory interpretation, API
 calls, or persistent storage.
+
+## PR5: Memory distortion engine
+
+PR5 adds a deterministic, store-level psychoanalytic memory distortion engine for private
+inspection and debug projections. It does not wire distortion artifacts into the runtime
+agent pipeline, Ego/MainAI response generation, or final responses.
+
+The engine models distortion as defensive transformation rather than lying, deletion, or
+historical rewriting:
+
+- **Screen memory** converts screened traces into conscious-compatible symbolic substitute
+  cues using public labels such as salient symbols, matched symbols, and safe structural
+  targets. These cues do not expose `private_core_summary`.
+- **Condensation** groups multiple activated traces with shared symbolic or affective
+  overlap into a composite cue. Individual source cues can be suppressed when the
+  condensed cue covers their conscious-compatible pressure.
+- **Displacement** shifts a risky object focus, such as authority or parental targets,
+  toward safer symbolic targets such as `task_structure`, `boundary`, `process`, or
+  `communication_format` without claiming historical truth.
+- **Deferred action** records candidate retrospective meaning updates when a newer trace
+  strongly reactivates older traces. Candidate records describe possible reorganization
+  without mutating old traces or incrementing stored `meaning_version` values.
+
+Boundary notes:
+
+- Distortion remains store-level/debug-level only.
+- There is no pipeline wiring, no Id/Ego/Censor/MainAI/SafetyGate wiring, and no final
+  response change.
+- No memory objects are added to `FullInternalState`.
+- No LLM interpreter or OpenAI API call is used.
+- No persistent storage, repetition bias generation, complex clustering, or automatic
+  historical trace mutation is introduced.

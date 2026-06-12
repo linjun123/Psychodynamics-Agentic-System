@@ -65,6 +65,15 @@ MemoryDefenseAccess = Literal[
 ]
 
 
+MemoryDistortionMode = Literal[
+    "none",
+    "screen_memory",
+    "condensation",
+    "displacement",
+    "deferred_action",
+]
+
+
 MemoryMechanism = Literal[
     "direct",
     "screen_memory",
@@ -227,10 +236,46 @@ class MemoryTransformationRecord(StrictSchemaModel):
     guard_result: Literal["passed", "repaired", "blocked"] = "passed"
 
 
+class MemoryDeferredActionUpdate(StrictSchemaModel):
+    old_trace_id: str
+    trigger_trace_id: str
+    old_created_turn: int = Field(ge=0)
+    trigger_created_turn: int = Field(ge=0)
+    previous_meaning_version: int = Field(ge=1)
+    proposed_meaning_version: int = Field(ge=1)
+    update_strength: float = Field(ge=0.0, le=1.0)
+    public_update_summary: str
+    private_update_summary: str | None = None
+    supporting_symbols: list[str] = Field(default_factory=list)
+    supporting_object_targets: list[str] = Field(default_factory=list)
+
+
+class MemoryDistortionDecision(StrictSchemaModel):
+    distortion_id: str
+    source_trace_ids: list[str] = Field(default_factory=list)
+    source_activation_ranks: list[int] = Field(default_factory=list)
+    mode: MemoryDistortionMode
+    mechanism: MemoryMechanism
+    should_emit_cue: bool
+    should_suppress_source_cues: bool = False
+    public_reason: str
+    intensity: float = Field(ge=0.0, le=1.0)
+
+
+class MemoryDistortionResult(StrictSchemaModel):
+    distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
+    distorted_cues: list[ConsciousMemoryCue] = Field(default_factory=list)
+    suppressed_trace_ids: list[str] = Field(default_factory=list)
+    transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
+    deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
+
+
 class MemoryProjectionResult(StrictSchemaModel):
     conscious_memory_view: ConsciousMemoryView
     defense_decisions: list[MemoryDefenseDecision] = Field(default_factory=list)
     transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
+    deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
+    distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
 
 
 class SafeMemoryDebugSummary(StrictSchemaModel):
@@ -250,6 +295,8 @@ class PrivateMemoryDebugTrace(StrictSchemaModel):
     retrieval_activations: list[MemoryActivation] = Field(default_factory=list)
     defense_decisions: list[MemoryDefenseDecision] = Field(default_factory=list)
     transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
+    distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
+    deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
     active_complexes: list[ComplexNode] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)
     conscious_memory_view: ConsciousMemoryView | None = None
