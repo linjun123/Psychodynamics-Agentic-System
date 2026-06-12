@@ -66,7 +66,19 @@ def should_screen_memory(decision: MemoryDefenseDecision, trace: MemoryTrace) ->
 
 
 def should_displace(decision: MemoryDefenseDecision, trace: MemoryTrace) -> bool:
-    return decision.decided_accessibility == "displaced" or (
+    # Distortion can transform screened/displaced material, but must not override
+    # blocked-action or felt-sense-only access into a conscious displaced cue.
+    if decision.decided_accessibility in {"blocked_action_only", "felt_sense_only"}:
+        return False
+    if decision.conscious_access in {"blocked_action_only", "felt_sense_only"}:
+        return False
+    if trace.accessibility == "blocked_action_only":
+        return False
+    if decision.decided_accessibility == "displaced":
+        return True
+    if not decision.emits_conscious_cue:
+        return False
+    return (
         _contains_keyword(trace.object_targets, _RISKY_OBJECT_KEYWORDS)
         and decision.defense_pressure >= 0.55
     )

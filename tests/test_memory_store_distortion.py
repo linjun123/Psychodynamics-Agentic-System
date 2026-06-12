@@ -91,3 +91,55 @@ def test_safe_summary_and_runtime_boundaries() -> None:
     field_names = set(FullInternalState.model_fields)
     assert "distortion_decisions" not in field_names
     assert "deferred_action_updates" not in field_names
+
+
+def test_store_projection_does_not_displace_blocked_action_only_trace() -> None:
+    class BlockedAssociator:
+        def retrieve(self, *, query, traces, top_k, min_score, include_blocked):
+            _ = (query, top_k, min_score, include_blocked)
+            return [
+                activation(
+                    trace_id=traces[0].trace_id,
+                    activation_rank=1,
+                    association_score=0.95,
+                )
+            ]
+
+    class BlockedDefenseGate:
+        def decide_many(self, *, activations, traces):
+            _ = traces
+            return [
+                decision(
+                    trace_id=activations[0].trace_id,
+                    activation_rank=1,
+                    original_accessibility="blocked_action_only",
+                    decided_accessibility="blocked_action_only",
+                    conscious_access="blocked_action_only",
+                    mechanism="blocked_action_only",
+                    emits_conscious_cue=False,
+                    defense_pressure=1.0,
+                )
+            ]
+
+    store = PsychoanalyticMemoryStore(
+        associator=BlockedAssociator(), defense_gate=BlockedDefenseGate()
+    )
+    store._traces = [
+        trace(
+            trace_id="blocked_boss",
+            object_targets=["boss"],
+            accessibility="blocked_action_only",
+            defense_level=1.0,
+            repression_pressure=1.0,
+            private_core_summary="PRIVATE blocked boss content",
+        )
+    ]
+
+    view = store.project_conscious_view_for_turn(user_input="boss pressure")
+    view_json = view.model_dump_json()
+
+    assert not any(cue.cue_type == "displaced_memory" for cue in view.active_cues)
+    assert not any(cue.cue_type == "direct_memory" for cue in view.active_cues)
+    assert not any(item.mode == "displacement" for item in store.latest_distortion_decisions())
+    assert "private_core_summary" not in view_json
+    assert "PRIVATE blocked boss content" not in view_json

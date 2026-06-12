@@ -28,3 +28,48 @@ def test_condense_and_defer_action() -> None:
     a2 = activation(trace_id="b", activation_rank=2)
     assert should_condense_group([a1, a2], [t1, t2])
     assert should_defer_action(old_trace=t1, trigger_trace=t2, similarity_score=0.8)
+
+
+def test_should_displace_false_for_blocked_action_only_even_with_risky_object() -> None:
+    tr = trace(object_targets=["boss"], accessibility="direct")
+    dec = decision(
+        decided_accessibility="blocked_action_only",
+        conscious_access="blocked_action_only",
+        mechanism="blocked_action_only",
+        emits_conscious_cue=False,
+        defense_pressure=1.0,
+    )
+
+    assert not should_displace(dec, tr)
+
+
+def test_should_displace_false_for_trace_accessibility_blocked_action_only() -> None:
+    tr = trace(accessibility="blocked_action_only", object_targets=["boss"])
+    dec = decision(defense_pressure=1.0)
+
+    assert not should_displace(dec, tr)
+
+
+def test_should_displace_false_for_felt_sense_only_even_with_risky_object() -> None:
+    tr = trace(object_targets=["boss"], accessibility="direct")
+    dec = decision(
+        decided_accessibility="felt_sense_only",
+        conscious_access="felt_sense_only",
+        mechanism="felt_sense_only",
+        emits_conscious_cue=True,
+        defense_pressure=0.9,
+    )
+
+    assert not should_displace(dec, tr)
+
+
+def test_should_displace_allows_explicit_displaced_decision() -> None:
+    tr = trace(object_targets=["boss"], accessibility="direct")
+    dec = decision(
+        decided_accessibility="displaced",
+        conscious_access="displaced",
+        mechanism="displacement",
+        emits_conscious_cue=False,
+    )
+
+    assert should_displace(dec, tr)

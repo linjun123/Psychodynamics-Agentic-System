@@ -69,3 +69,38 @@ def test_engine_builds_all_distortion_artifacts_without_mutation() -> None:
     assert before == [item.model_dump() for item in traces]
     for cue in result.distorted_cues:
         assert "PRIVATE" not in cue.public_summary
+
+
+def test_engine_does_not_displace_blocked_action_only_trace() -> None:
+    blocked_trace = trace(
+        trace_id="blocked",
+        object_targets=["boss"],
+        accessibility="direct",
+        defense_level=1.0,
+        repression_pressure=1.0,
+    )
+    blocked_activation = activation(
+        trace_id="blocked",
+        activation_rank=1,
+        association_score=0.95,
+    )
+    blocked_decision = decision(
+        trace_id="blocked",
+        activation_rank=1,
+        original_accessibility="direct",
+        decided_accessibility="blocked_action_only",
+        conscious_access="blocked_action_only",
+        mechanism="blocked_action_only",
+        emits_conscious_cue=False,
+        defense_pressure=1.0,
+    )
+
+    result = MemoryDistortionEngine().build_distortion_result(
+        activations=[blocked_activation],
+        traces=[blocked_trace],
+        decisions=[blocked_decision],
+    )
+
+    assert not any(cue.cue_type == "displaced_memory" for cue in result.distorted_cues)
+    assert not any(item.mode == "displacement" for item in result.distortion_decisions)
+    assert not any(record.mechanism == "displacement" for record in result.transformation_chain)
