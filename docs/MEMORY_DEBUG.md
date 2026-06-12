@@ -151,3 +151,27 @@ Redaction behavior is unchanged in principle and expanded for deferred action:
 `ConsciousMemoryView` remains public/conscious-compatible and private-summary-free. Safe
 memory debug summaries remain mechanism-level only and do not include deferred-action
 records, private input summaries, or private update summaries.
+
+## PR6 repetition-bias debug artifacts
+
+Private memory debug traces can now include repetition-bias artifacts after store-level
+projection has run:
+
+- `repetition_triggers` records public-safe reasons that blocked, felt-sense, screened,
+  high-defense, deferred-action, or condensed memory pressure returned as strategy tendency
+  metadata.
+- `repetition_biases` records merged safe strategy metadata, including tendency, bounded
+  intensity, safe strategy hints, and prohibited expression notes.
+- `ConsciousMemoryView.repetition_biases` can include compact public labels such as
+  `avoid_topic:0.72` or `ask_for_structure:0.64` and a bounded `repetition_pressure` value.
+
+`include_private_trace_text` has no effect on `RepetitionBias` because repetition biases do not
+contain private trace text or `private_core_summary`. When private trace text is disabled,
+trace private summaries, transformation private inputs, and deferred-action private update
+summaries are still redacted by the existing redaction path, while repetition triggers and
+biases are preserved as public-safe metadata.
+
+Safe debug remains mechanism-level. `SafeMemoryDebugSummary` may include a bounded
+`repetition_pressure` and a public note that repetition-bias artifacts exist for private
+inspection, but it does not include repetition trigger payloads, source trace IDs, private
+summaries, or raw private text.

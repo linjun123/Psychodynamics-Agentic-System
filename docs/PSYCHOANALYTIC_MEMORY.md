@@ -182,3 +182,36 @@ Boundary notes:
 - No LLM interpreter or OpenAI API call is used.
 - No persistent storage, repetition bias generation, complex clustering, or automatic
   historical trace mutation is introduced.
+
+## PR6: Repetition bias generation
+
+PR6 adds deterministic, modular repetition-bias generation for store-level and debug-level
+memory inspection. It models the psychoanalytic idea that what is not directly remembered
+may return as repeated action tendency or strategy pressure.
+
+Blocked, felt-sense-only, screened, high-defense, repeatedly activated, deferred-action, or
+condensed traces can produce `RepetitionBias` metadata such as `seek_reassurance`,
+`avoid_topic`, `over_explain`, `test_boundary`, `intellectualize`, `ask_for_structure`,
+`preempt_rejection`, or `control_uncertainty`. These artifacts are safe strategy metadata:
+they can include source trace IDs for private developer inspection, compact tendency labels,
+bounded intensity, safe handling hints, and prohibited expression notes, but they do not expose
+`private_core_summary` or raw private summaries.
+
+The repetition system is intentionally split into focused modules:
+
+- `repetition_policy.py` contains deterministic thresholds, pressure scoring, tendency
+  selection, safe hints, and prohibited-expression metadata.
+- `repetition_generation.py` constructs public-safe triggers and `RepetitionBias` objects and
+  merges duplicate tendencies.
+- `repetition_engine.py` orchestrates per-trace triggers plus deferred-action and condensed
+  pressure triggers.
+
+Boundary notes:
+
+- Repetition bias is not clinical diagnosis and does not claim historical truth.
+- Repetition bias is not runtime behavior yet; it is store/debug metadata only.
+- There is no Id/Ego/Censor/MainAI/SafetyGate or pipeline wiring in this PR.
+- `FullInternalState` is not extended with repetition memory fields.
+- No LLM interpreter or OpenAI API call is used.
+- No complex clustering, persistent storage, `activation_count` mutation, or historical
+  `meaning_version` mutation is introduced.

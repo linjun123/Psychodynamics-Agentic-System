@@ -25,6 +25,16 @@ from psychodynamic_agent.memory.output_guard import (
     assert_private_memory_debug_trace_allowed,
     assert_safe_memory_debug_summary,
 )
+from psychodynamic_agent.memory.repetition_engine import MemoryRepetitionEngine
+from psychodynamic_agent.memory.repetition_generation import (
+    build_repetition_bias_from_trigger,
+    build_repetition_trigger,
+    merge_repetition_biases,
+)
+from psychodynamic_agent.memory.repetition_policy import (
+    repetition_pressure_score,
+    should_generate_repetition_bias,
+)
 from psychodynamic_agent.memory.retrieval_query import build_memory_retrieval_query
 from psychodynamic_agent.memory.screen_memory import build_screen_memory_cue
 from psychodynamic_agent.memory.store import PsychoanalyticMemoryStore
@@ -39,7 +49,13 @@ __all__ = [
     "build_screen_memory_cue",
     "build_deferred_action_updates",
     "MemoryDistortionEngine",
+    "MemoryRepetitionEngine",
     "build_conscious_memory_view",
+    "build_repetition_trigger",
+    "build_repetition_bias_from_trigger",
+    "merge_repetition_biases",
+    "repetition_pressure_score",
+    "should_generate_repetition_bias",
     "choose_defensive_access",
     "defense_pressure_score",
     "build_memory_retrieval_query",

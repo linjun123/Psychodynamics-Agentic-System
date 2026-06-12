@@ -188,20 +188,32 @@ class ConsciousMemoryView(StrictSchemaModel):
     caution: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
+MemoryRepetitionTendency = Literal[
+    "seek_reassurance",
+    "avoid_topic",
+    "over_explain",
+    "test_boundary",
+    "intellectualize",
+    "ask_for_structure",
+    "preempt_rejection",
+    "control_uncertainty",
+]
+
+MemoryRepetitionTriggerKind = Literal[
+    "blocked_memory",
+    "felt_sense_memory",
+    "screened_memory",
+    "deferred_action",
+    "condensed_pressure",
+    "high_defense_activation",
+]
+
+
 class RepetitionBias(StrictSchemaModel):
     bias_id: str
     source_trace_ids: list[str] = Field(default_factory=list)
     source_complex_id: str | None = None
-    tendency: Literal[
-        "seek_reassurance",
-        "avoid_topic",
-        "over_explain",
-        "test_boundary",
-        "intellectualize",
-        "ask_for_structure",
-        "preempt_rejection",
-        "control_uncertainty",
-    ]
+    tendency: MemoryRepetitionTendency
     intensity: float = Field(ge=0.0, le=1.0)
     safe_strategy_hint: str
     prohibited_expression: list[str] = Field(default_factory=list)
@@ -270,12 +282,30 @@ class MemoryDistortionResult(StrictSchemaModel):
     deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
 
 
+class MemoryRepetitionTrigger(StrictSchemaModel):
+    trigger_id: str
+    source_trace_ids: list[str] = Field(default_factory=list)
+    source_activation_ranks: list[int] = Field(default_factory=list)
+    trigger_kind: MemoryRepetitionTriggerKind
+    tendency: MemoryRepetitionTendency
+    intensity: float = Field(ge=0.0, le=1.0)
+    public_reason: str
+
+
+class MemoryRepetitionResult(StrictSchemaModel):
+    triggers: list[MemoryRepetitionTrigger] = Field(default_factory=list)
+    repetition_biases: list[RepetitionBias] = Field(default_factory=list)
+    repetition_pressure: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
 class MemoryProjectionResult(StrictSchemaModel):
     conscious_memory_view: ConsciousMemoryView
     defense_decisions: list[MemoryDefenseDecision] = Field(default_factory=list)
     transformation_chain: list[MemoryTransformationRecord] = Field(default_factory=list)
     deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
     distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
+    repetition_biases: list[RepetitionBias] = Field(default_factory=list)
+    repetition_triggers: list[MemoryRepetitionTrigger] = Field(default_factory=list)
 
 
 class SafeMemoryDebugSummary(StrictSchemaModel):
@@ -298,6 +328,7 @@ class PrivateMemoryDebugTrace(StrictSchemaModel):
     distortion_decisions: list[MemoryDistortionDecision] = Field(default_factory=list)
     deferred_action_updates: list[MemoryDeferredActionUpdate] = Field(default_factory=list)
     active_complexes: list[ComplexNode] = Field(default_factory=list)
+    repetition_triggers: list[MemoryRepetitionTrigger] = Field(default_factory=list)
     repetition_biases: list[RepetitionBias] = Field(default_factory=list)
     conscious_memory_view: ConsciousMemoryView | None = None
     safe_summary: SafeMemoryDebugSummary | None = None
