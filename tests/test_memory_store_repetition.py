@@ -1,7 +1,11 @@
 from memory_distortion_helpers import activation, decision, trace
 
 from psychodynamic_agent.memory.store import PsychoanalyticMemoryStore
-from psychodynamic_agent.schemas.memory import MemoryDebugConfig
+from psychodynamic_agent.schemas.memory import (
+    MemoryDebugConfig,
+    MemoryDistortionDecision,
+    RepetitionBias,
+)
 from psychodynamic_agent.schemas.state import FullInternalState
 
 
@@ -99,6 +103,7 @@ def test_safe_summary_includes_repetition_pressure_without_private_identifiers()
     safe = store.build_safe_summary()
     payload = safe.model_dump_json()
     assert safe.repetition_pressure > 0
+    assert "repetition_bias" in safe.active_mechanisms
     assert "Repetition-bias artifacts" in payload
     assert "blocked_trace" not in payload
     assert "private_core_summary" not in payload
@@ -106,6 +111,59 @@ def test_safe_summary_includes_repetition_pressure_without_private_identifiers()
     assert "private_input_summary" not in payload
     assert "repetition_triggers" not in payload
     assert "source_trace_ids" not in payload
+
+
+def test_safe_summary_reports_repetition_bias_without_defense_decisions() -> None:
+    store = PsychoanalyticMemoryStore()
+    store._traces = [
+        trace(
+            trace_id="summary_trace",
+            private_core_summary="PRIVATE private_core_summary text",
+        )
+    ]
+    store._latest_repetition_biases = [
+        RepetitionBias(
+            bias_id="rep_bias_deferred",
+            source_trace_ids=["summary_trace", "other_trace"],
+            tendency="seek_reassurance",
+            intensity=0.72,
+            safe_strategy_hint="Use gentle confirmation without creating dependency.",
+            prohibited_expression=["Do not repeatedly ask the user to validate the system."],
+        )
+    ]
+
+    safe = store.build_safe_summary()
+    payload = safe.model_dump_json()
+
+    assert safe.repetition_pressure > 0
+    assert "repetition_bias" in safe.active_mechanisms
+    assert safe.active_mechanisms != ["direct"]
+    assert "source_trace_ids" not in payload
+    assert "summary_trace" not in payload
+    assert "private_core_summary" not in payload
+    assert "private_update_summary" not in payload
+    assert "PRIVATE" not in payload
+
+
+def test_safe_summary_reports_distortion_mechanisms_without_defense_decisions() -> None:
+    store = PsychoanalyticMemoryStore()
+    store._traces = [trace(trace_id="distortion_trace")]
+    store._latest_distortion_decisions = [
+        MemoryDistortionDecision(
+            distortion_id="deferred_distortion",
+            source_trace_ids=["distortion_trace", "trigger_trace"],
+            mode="deferred_action",
+            mechanism="deferred_action",
+            should_emit_cue=False,
+            public_reason="A later trace may intensify an older pattern.",
+            intensity=0.8,
+        )
+    ]
+
+    safe = store.build_safe_summary()
+
+    assert "deferred_action" in safe.active_mechanisms
+    assert safe.active_mechanisms != ["direct"]
 
 
 def test_full_internal_state_has_no_repetition_memory_fields() -> None:
