@@ -7,7 +7,9 @@ from psychodynamic_agent.memory.output_guard import (
 )
 from psychodynamic_agent.schemas.memory import (
     AffectiveSignature,
+    ComplexNode,
     DesireSignature,
+    MemoryComplexActivation,
     MemoryDebugConfig,
     MemoryTrace,
     PrivateMemoryDebugTrace,
@@ -150,3 +152,44 @@ def test_build_private_memory_debug_trace_if_allowed_returns_copy_when_enabled()
 
     assert result == debug_trace
     assert result is not debug_trace
+
+
+def test_private_memory_debug_guard_scans_active_complex_private_label() -> None:
+    debug_trace = PrivateMemoryDebugTrace(
+        active_complexes=[
+            ComplexNode(
+                complex_id="cx_guard_1",
+                private_label="latent_alignment",
+                public_label="evaluation_sensitivity_cluster",
+                charge=0.5,
+            )
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        assert_private_memory_debug_trace_allowed(debug_trace)
+
+
+def test_private_memory_debug_guard_scans_complex_activation_private_label() -> None:
+    debug_trace = PrivateMemoryDebugTrace(
+        complex_activations=[
+            MemoryComplexActivation(
+                complex_id="cx_guard_1",
+                public_label="evaluation_sensitivity_cluster",
+                private_label="system_prompt",
+                activation_score=0.7,
+                charge=0.6,
+                public_reason="Complex activated by related memory traces.",
+            )
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        assert_private_memory_debug_trace_allowed(debug_trace)
+
+
+def test_safe_memory_debug_summary_rejects_private_label_public_note() -> None:
+    summary = SafeMemoryDebugSummary(public_notes=["private_label should not appear"])
+
+    with pytest.raises(ValueError):
+        assert_safe_memory_debug_summary(summary)

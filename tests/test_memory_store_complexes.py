@@ -87,7 +87,9 @@ def test_private_debug_includes_active_complexes_and_redacts_private_labels() ->
     assert debug_trace.complex_activations
     assert debug_trace.active_complexes[0].private_label is None
     assert debug_trace.complex_activations[0].private_label is None
-    assert "private_label" not in debug_trace.model_dump_json()
+    redacted_json = debug_trace.model_dump_json()
+    assert "authority_evaluation_complex" not in redacted_json
+    assert "Simulation trace links" not in redacted_json
 
 
 def test_private_debug_with_text_can_include_private_labels() -> None:
@@ -105,6 +107,7 @@ def test_private_debug_with_text_can_include_private_labels() -> None:
     assert debug_trace is not None
     assert debug_trace.active_complexes[0].private_label == "authority_evaluation_complex"
     assert debug_trace.complex_activations[0].private_label == "authority_evaluation_complex"
+    assert "authority_evaluation_complex" in debug_trace.model_dump_json()
 
 
 def test_safe_summary_includes_complex_counts_mechanism_and_no_private_fields() -> None:

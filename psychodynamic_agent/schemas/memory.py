@@ -221,7 +221,7 @@ class RepetitionBias(StrictSchemaModel):
 
 class ComplexNode(StrictSchemaModel):
     complex_id: str
-    private_label: str | None = Field(default=None, exclude=True)
+    private_label: str | None = None
     public_label: str
     dominant_affects: list[str] = Field(default_factory=list)
     dominant_desires: list[str] = Field(default_factory=list)
@@ -238,7 +238,7 @@ class ComplexNode(StrictSchemaModel):
 class MemoryComplexActivation(StrictSchemaModel):
     complex_id: str
     public_label: str
-    private_label: str | None = Field(default=None, exclude=True)
+    private_label: str | None = None
     source_trace_ids: list[str] = Field(default_factory=list)
     source_activation_trace_ids: list[str] = Field(default_factory=list)
     activation_score: float = Field(ge=0.0, le=1.0)
